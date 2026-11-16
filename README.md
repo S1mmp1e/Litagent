@@ -1,5 +1,7 @@
 # LitAgent
 
+![Checks](https://github.com/S1mmp1e/Litagent/actions/workflows/checks.yml/badge.svg)
+
 **以论文原文为依据，结合你的阅读方式与个人笔记。**
 
 LitAgent 是面向个人研究工作流的论文阅读 Agent：导入 PDF 或 arXiv 论文，进行全文精读和证据追问，检查引用位置，将结果沉淀为可编辑笔记，再让经过你选择的笔记与批注参与下一次阅读。

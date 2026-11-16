@@ -14,10 +14,12 @@
 | 公共演示截图 | 八张已生成并检查 | PDF 可见深色像素 11,385；手机宽度 390，无横向溢出 |
 | Docker Compose 配置 | 通过 | `docker compose config --quiet` 返回 0 |
 | Docker 构建与运行 | 未执行 | Docker Desktop Linux 引擎未运行 |
-| Linux GitHub Actions | 发布后检查 | Windows 通过不能替代 Linux 验证 |
+| Linux GitHub Actions | 每次提交生成 Checks 记录 | 固定 Ubuntu 24.04、Python 3.12、Node 24；以对应提交运行结果为准 |
 | 真实模型质量 / 召回率 | 未提供实测分数 | 需要独立审核集与匹配预算的实验 |
 
 前一轮迁移、只读真实 PDF 验证和详细范围保存在 [v6 验收记录](VALIDATION_V6.md)。历史记录不自动代表后续版本的状态。
+
+首次上传的 Linux 后端检查通过，浏览器检查在安装阶段遇到 `ubuntu-latest` 切换至 Ubuntu 26.04 后与 Playwright 1.56.1 不兼容的问题。CI 已固定为 Ubuntu 24.04；未执行的浏览器步骤不计为通过。
 
 ## 可运行的软件检查
 

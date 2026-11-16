@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   backend:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7.0.1
@@ -24,7 +24,8 @@ jobs:
       - run: python -m pytest -q
 
   browser:
-    runs-on: ubuntu-latest
+    # Match the OS supported by the pinned Playwright release.
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7.0.1
