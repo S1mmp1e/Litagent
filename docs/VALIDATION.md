@@ -21,6 +21,8 @@
 
 首次上传的 Linux 后端检查通过，浏览器检查在安装阶段遇到 `ubuntu-latest` 切换至 Ubuntu 26.04 后与 Playwright 1.56.1 不兼容的问题。CI 已固定为 Ubuntu 24.04；未执行的浏览器步骤不计为通过。
 
+Linux 浏览器验收进一步发现 PDF 缩放重绘期间仍保留 `ready` 状态。现已在重绘开始时标记 `rendering` / `aria-busy`，仅在画布和文字层完成后恢复 `ready`；原有非空像素检查继续作为回归门槛。
+
 ## 可运行的软件检查
 
 ```powershell

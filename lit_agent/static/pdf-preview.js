@@ -69,6 +69,7 @@
       status.textContent = text;
       status.hidden = !text;
       root.dataset.state = state;
+      root.setAttribute('aria-busy', String(state === 'loading' || state === 'rendering'));
     }
     function link(url) {
       open.hidden = !url;
@@ -89,6 +90,7 @@
       const token = ++renderSequence, documentToken = sequence;
       renderTask?.cancel();
       textTask?.cancel();
+      message('', 'rendering');
       controls();
       renderedWidth = viewport.clientWidth;
       try {
