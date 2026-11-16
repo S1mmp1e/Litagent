@@ -59,7 +59,11 @@ async function main(){
     const before=await marker.boundingBox();
     const ratio=await marker.evaluate(node=>parseFloat(node.style.left)/node.parentElement.clientWidth);
     await pdf.getByRole('button',{name:'放大',exact:true}).click();
-    await page.waitForFunction(width=>parseFloat(document.querySelector('#reading-pdf-preview .annotation-highlight').style.width)>width+1,before.width);
+    await page.waitForFunction(width=>{
+      const root=document.querySelector('#reading-pdf-preview');
+      const highlight=root.querySelector('.annotation-highlight');
+      return root.dataset.state==='ready'&&highlight&&parseFloat(highlight.style.width)>width+1;
+    },before.width);
     const afterRatio=await marker.evaluate(node=>parseFloat(node.style.left)/node.parentElement.clientWidth);
     assert(Math.abs(afterRatio-ratio)<0.002,'Highlight moved relative to the PDF');
     await pdf.getByRole('button',{name:'下一页',exact:true}).click();
