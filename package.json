@@ -1,0 +1,19 @@
+{
+  "name": "litagent-ui-checks",
+  "private": true,
+  "scripts": {
+    "vendor": "node scripts/vendor.cjs",
+    "showcase": "node scripts/showcase.cjs",
+    "test:ui": "node tests/browser.cjs",
+    "test:notebook-ui": "node tests/notebook-browser.cjs",
+    "test:reading-selection": "node tests/reading-selection.cjs",
+    "test:annotations-ui": "node tests/annotations-browser.cjs"
+  },
+  "devDependencies": {
+    "dompurify": "3.4.17",
+    "lucide": "0.468.0",
+    "marked": "18.2.0",
+    "pdfjs-dist": "5.4.624",
+    "playwright": "1.56.1"
+  }
+}

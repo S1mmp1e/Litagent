@@ -1,0 +1,56 @@
+.pdf-preview { container-type:inline-size; }
+.annotation-selection { display:flex; align-items:center; gap:12px; padding:8px 12px; border-bottom:1px solid #c7d8cd; background:#edf5ef; }
+.annotation-selection>span { flex:1; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; font-size:12px; }
+.annotation-layer { position:absolute; inset:0; pointer-events:none; z-index:4; overflow:hidden; }
+.annotation-highlight { position:absolute; opacity:.3; mix-blend-mode:multiply; }
+.annotation-highlight.yellow { background:#efbf1b; }
+.annotation-highlight.green { background:#3dbe8d; }
+.annotation-highlight.pink { background:#ee7da1; }
+.annotation-highlight.focused { outline:1px solid #6c5520; opacity:.45; }
+.annotations-panel { border-top:1px solid #cdd7d1; background:#fff; padding:12px; min-width:0; font-size:13px; }
+.annotations-heading,.annotation-version-row { display:flex; gap:10px; justify-content:space-between; align-items:center; }
+.annotation-count { color:#6a796f; font-weight:400; }
+.annotation-list { max-height:310px; overflow:auto; }
+.annotation-item { border-bottom:1px solid #e2e7e3; padding:12px 0; overflow-wrap:anywhere; }
+.annotation-item-heading { display:flex; align-items:center; gap:4px; font-size:11px; color:#627269; }
+.annotation-item-heading>span { flex:1; }
+.annotation-item-heading .icon-btn { width:28px; height:28px; min-height:28px; flex-basis:28px; padding:5px; }
+.annotations-panel blockquote { border-left:3px solid #d8b33f; margin:8px 0; padding:3px 10px; color:#59655e; font-size:12px; max-height:85px; overflow:auto; white-space:pre-wrap; overflow-wrap:anywhere; }
+.annotation-item.green blockquote { border-color:#52a67e; }
+.annotation-item.pink blockquote { border-color:#d5819b; }
+.annotation-item p { white-space:pre-wrap; line-height:1.6; }
+.annotation-status,.annotation-warning { color:#886832; font-size:12px; overflow-wrap:anywhere; }
+.annotation-status:empty { display:none; }
+.annotation-editor { margin:12px 0; padding-bottom:14px; border-bottom:1px solid #d8e0da; }
+.annotation-editor textarea { display:block; width:100%; min-width:0; margin:6px 0; padding:8px; font:inherit; font-weight:400; color:#26352e; border:1px solid #cdd4d0; border-radius:4px; background:#fff; }
+.annotation-options,.annotation-editor-actions,.annotation-colors { display:flex; align-items:center; flex-wrap:wrap; gap:10px; margin-top:10px; }
+.annotation-options { justify-content:space-between; }
+.annotation-colors { margin:0; gap:8px; }
+.annotation-swatch { width:26px; height:26px; display:grid; place-items:center; border:1px solid #b5bdb7; border-radius:4px; cursor:pointer; }
+.annotation-swatch.yellow { background:#f8e49a; }
+.annotation-swatch.green { background:#b5e3cd; }
+.annotation-swatch.pink { background:#f1c5d4; }
+.annotation-swatch input { width:14px; height:14px; accent-color:#334e40; cursor:pointer; }
+.annotation-versions { max-width:100px; padding:4px; border:1px solid #cdd4d0; border-radius:4px; background:#fff; }
+.reading-result .personal-citation-button { background:#f3eff8; color:#69517e; border-color:#d8cbe3; }
+.personal-evidence-dialog { margin:auto; padding:20px; width:min(700px,94vw); max-height:88vh; overflow:auto; border:1px solid #cdd4d0; border-radius:8px; }
+.personal-evidence-dialog::backdrop { background:#0006; }
+.personal-evidence-meta { margin:12px 0; color:#6a756d; font-size:12px; overflow-wrap:anywhere; }
+.personal-evidence-text { white-space:pre-wrap; overflow-wrap:anywhere; line-height:1.8; font-size:14px; }
+.personal-evidence-actions { margin-top:14px; }
+.notebook-personal-option { margin:8px 0 12px; }
+@container(min-width:680px) {
+  .pdf-reader:has(.annotations-panel:not([hidden])) { display:grid; grid-template-columns:minmax(0,1fr) 250px; grid-template-areas:"controls controls" "selection selection" "page panel"; align-items:start; }
+  .pdf-reader>.pdf-controls { grid-area:controls; }
+  .pdf-reader>.annotation-selection { grid-area:selection; }
+  .pdf-reader>.pdf-viewport { grid-area:page; }
+  .pdf-reader>.annotations-panel { grid-area:panel; border-top:0; border-left:1px solid #d8e0da; max-height:640px; overflow:auto; }
+  .pdf-reader .annotation-list { max-height:none; }
+  .pdf-reader .annotation-options { align-items:flex-start; }
+}
+@media(max-width:600px) {
+  .annotations-panel { padding:10px; }
+  .annotation-item-heading { flex-wrap:wrap; }
+  .annotation-item-heading>span { flex-basis:calc(100% - 100px); }
+  .pdf-controls { gap:4px; flex-wrap:wrap; }
+}

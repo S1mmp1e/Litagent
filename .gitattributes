@@ -1,0 +1,11 @@
+* text=auto eol=lf
+*.bat text eol=crlf
+*.png binary
+*.jpg binary
+*.pdf binary
+*.bcmap binary
+*.pfb binary
+*.ttf binary
+*.wasm binary
+# Preserve upstream license and generated asset formatting.
+lit_agent/static/vendor/** -whitespace

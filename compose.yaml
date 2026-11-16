@@ -1,0 +1,35 @@
+services:
+  litagent:
+    build: .
+    env_file:
+      - .env
+    environment:
+      LIT_HOST: 0.0.0.0
+      LIT_PORT: 7860
+      LIT_DB_PATH: /data/lit_agent.db
+      LIT_DATA_DIR: /data
+      LIT_ALLOW_MODEL_DOWNLOAD: "0"
+    ports:
+      - "127.0.0.1:7860:7860"
+    volumes:
+      - litagent-data:/data
+      - litagent-model-cache:/home/litagent/.cache/huggingface
+    restart: unless-stopped
+
+  setup-embeddings:
+    profiles: ["setup"]
+    build: .
+    env_file:
+      - .env
+    environment:
+      LIT_DATA_DIR: /data
+      LIT_DB_PATH: /data/lit_agent.db
+      LIT_ALLOW_MODEL_DOWNLOAD: "1"
+    volumes:
+      - litagent-data:/data
+      - litagent-model-cache:/home/litagent/.cache/huggingface
+    command: ["python", "-m", "scripts.setup_embeddings"]
+
+volumes:
+  litagent-data:
+  litagent-model-cache:

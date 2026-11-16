@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LitAgent — 智能文献管理助手</title>
+<style>
+/* ===== Reset & Base ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #333; height: 100vh; overflow: hidden; }
+a { color: #2563eb; text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ===== Layout ===== */
+.app { display: flex; height: 100vh; }
+.sidebar { width: 280px; min-width: 280px; background: #f8f9fa; border-right: 1px solid #e5e7eb; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.main { flex: 1; overflow-y: auto; padding: 20px 24px; min-width: 0; }
+
+/* ===== Tabs (pure CSS) ===== */
+.tab-radio { display: none; }
+.tab-nav { display: flex; gap: 0; border-bottom: 2px solid #e5e7eb; margin-bottom: 20px; }
+.tab-nav label { padding: 10px 20px; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; font-size: 14px; font-weight: 500; color: #6b7280; user-select: none; }
+.tab-nav label:hover { color: #333; }
+.tab-radio:checked + label { color: #2563eb; border-bottom-color: #2563eb; }
+.tab-panel { display: none; }
+#tab1:checked ~ .tab-content #panel1,
+#tab2:checked ~ .tab-content #panel2,
+#tab3:checked ~ .tab-content #panel3,
+#tab4:checked ~ .tab-content #panel4 { display: block; }
+
+/* ===== Sidebar ===== */
+.sidebar h3 { font-size: 13px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+.sidebar .stat { font-size: 13px; color: #374151; line-height: 1.6; }
+.sidebar hr { border: none; border-top: 1px solid #e5e7eb; margin: 4px 0; }
+.sidebar input, .sidebar select { width: 100%; padding: 6px 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; }
+.sidebar input:focus, .sidebar select:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,.15); }
+.sidebar .row { display: flex; gap: 6px; }
+.sidebar .row > * { flex: 1; min-width: 0; }
+.btn { display: inline-flex; align-items: center; justify-content: center; padding: 6px 12px; border: 1px solid #d1d5db; border-radius: 6px; background: #fff; font-size: 13px; cursor: pointer; white-space: nowrap; }
+.btn:hover { background: #f3f4f6; }
+.btn.primary { background: #2563eb; color: #fff; border-color: #2563eb; }
+.btn.primary:hover { background: #1d4ed8; }
+.btn.danger { background: #dc2626; color: #fff; border-color: #dc2626; }
+.btn.danger:hover { background: #b91c1c; }
+.btn.sm { padding: 4px 8px; font-size: 12px; }
+.btn-group { display: flex; gap: 4px; flex-wrap: wrap; }
+.msg { font-size: 12px; margin-top: 4px; min-height: 18px; color: #6b7280; }
+.msg.success { color: #16a34a; }
+.msg.error { color: #dc2626; }
+
+/* ===== Tables ===== */
+.toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.toolbar h2 { font-size: 16px; font-weight: 600; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; padding: 8px 10px; background: #f8f9fa; border-bottom: 2px solid #e5e7eb; font-weight: 600; font-size: 12px; color: #6b7280; }
+td { padding: 7px 10px; border-bottom: 1px solid #f3f4f6; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+tr:hover td { background: #f0f4ff; cursor: pointer; }
+tr.selected td { background: #dbeafe; }
+
+/* ===== Detail Panel ===== */
+.detail-panel { margin-top: 12px; padding: 12px; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; display: none; }
+.detail-panel.active { display: block; }
+.detail-panel h3 { font-size: 16px; margin-bottom: 8px; }
+.detail-panel .meta { display: flex; gap: 16px; font-size: 13px; color: #6b7280; margin-bottom: 8px; }
+.detail-panel .abstract { font-size: 14px; line-height: 1.7; white-space: pre-wrap; }
+.detail-panel .authors { margin: 8px 0; font-size: 13px; color: #374151; }
+
+/* ===== Accordion ===== */
+.accordion { margin-top: 8px; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; }
+.accordion summary { padding: 8px 12px; background: #f8f9fa; cursor: pointer; font-size: 13px; font-weight: 500; user-select: none; }
+.accordion .body { padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+
+/* ===== Chat ===== */
+.chat-area { border: 1px solid #e5e7eb; border-radius: 8px; height: 360px; overflow-y: auto; padding: 12px; background: #fff; margin-bottom: 10px; display: flex; flex-direction: column; gap: 10px; }
+.chat-msg { max-width: 85%; padding: 8px 12px; border-radius: 12px; font-size: 14px; line-height: 1.6; word-wrap: break-word; white-space: pre-wrap; }
+.chat-msg.user { align-self: flex-end; background: #2563eb; color: #fff; border-bottom-right-radius: 4px; }
+.chat-msg.assistant { align-self: flex-start; background: #f3f4f6; border-bottom-left-radius: 4px; }
+.chat-msg.assistant p { margin: 0.4em 0; }
+.chat-msg.assistant code { background: #e5e7eb; padding: 1px 4px; border-radius: 3px; font-size: 13px; }
+.chat-msg.assistant pre { background: #1f2937; color: #e5e7eb; padding: 8px; border-radius: 6px; overflow-x: auto; margin: 6px 0; }
+.chat-msg.assistant pre code { background: none; padding: 0; }
+.chat-empty { color: #9ca3af; text-align: center; margin-top: 140px; font-size: 14px; }
+.chat-config { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.chat-config select, .chat-config input { padding: 6px 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; }
+.chat-config select:focus, .chat-config input:focus { outline: none; border-color: #2563eb; }
+.chat-input-row { display: flex; gap: 8px; margin-top: 8px; }
+.chat-input-row input { flex: 1; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; }
+.chat-input-row input:focus { outline: none; border-color: #2563eb; }
+
+/* ===== Spinner ===== */
+.spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #e5e7eb; border-top-color: #2563eb; border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: middle; margin-right: 6px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading { opacity: 0.6; pointer-events: none; }
+
+/* ===== Toast ===== */
+.toast { position: fixed; top: 16px; right: 16px; padding: 10px 16px; border-radius: 8px; color: #fff; font-size: 13px; z-index: 9999; animation: fadeIn 0.2s; max-width: 360px; }
+.toast.info { background: #2563eb; }
+.toast.error { background: #dc2626; }
+.toast.success { background: #16a34a; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ===== Markdown-like content in chat ===== */
+.content-md h1, .content-md h2, .content-md h3 { margin: 8px 0 4px; font-size: 15px; }
+.content-md ul, .content-md ol { padding-left: 20px; margin: 4px 0; }
+.content-md li { margin: 2px 0; }
+.content-md table { margin: 6px 0; }
+.content-md th, .content-md td { padding: 4px 8px; font-size: 12px; }
+
+/* ===== Color picker ===== */
+input[type="color"] { width: 32px; height: 28px; border: 1px solid #d1d5db; border-radius: 4px; cursor: pointer; padding: 2px; }
+</style>
+<link rel="stylesheet" href="/static/reading.css?v=markdown-1">
+<link rel="stylesheet" href="/static/vendor/pdfjs/pdf_viewer.css">
+<link rel="stylesheet" href="/static/workspace.css?v=pdf-2">
+<link rel="stylesheet" href="/static/notebook.css?v=4">
+</head>
+<body>
+<div class="app">
+<!-- ===== SIDEBAR ===== -->
+<aside class="sidebar" id="sidebar">
+  <a class="brand" href="/" aria-label="LitAgent 首页"><span class="brand-symbol"><i data-lucide="library"></i></span><span>LitAgent<small>研究文献工作台</small></span></a>
+  <div class="sidebar-section-title"><i data-lucide="library-big"></i>我的研究空间</div>
+  <details class="library-overview">
+  <summary>文献库统计与标签</summary>
+  <h3>文献库统计</h3>
+  <div class="stat" id="sidebar-stats">{{ stats_md | safe }}</div>
+  </details>
+  <hr>
+  <h3>分类夹</h3>
+  <div class="stat" id="sidebar-cats">{{ cat_md | safe }}</div>
+
+  <div style="margin-top:8px;">
+    <div class="row" style="margin-bottom:4px;">
+      <input type="text" id="new-cat-name" placeholder="新建分类夹名称" style="flex:4">
+      <input type="color" id="new-cat-color" value="#6b7280" title="分类夹颜色标识" style="flex:1">
+    </div>
+    <button class="btn primary sm" onclick="createCategory()">+ 新建分类夹</button>
+    <div class="msg" id="create-cat-msg"></div>
+  </div>
+
+  <details class="accordion">
+    <summary>管理分类夹</summary>
+    <div class="body">
+      <select id="mgmt-cat-dd"><option value="">选择分类夹...</option></select>
+      <input type="text" id="rename-cat-input" placeholder="新名称">
+      <div class="btn-group">
+        <button class="btn sm" onclick="renameCategory()">重命名</button>
+        <button class="btn danger sm" onclick="deleteCategory()">删除</button>
+      </div>
+      <div class="msg" id="manage-cat-msg"></div>
+    </div>
+  </details>
+
+  <hr>
+  <h3>通过 arXiv 添加</h3>
+  <div class="row">
+    <input type="text" id="arxiv-id-input" placeholder="例如: 1706.03762">
+    <button class="btn primary icon-btn" onclick="addToLibrary()" title="添加论文" aria-label="添加论文"><i data-lucide="plus"></i></button>
+  </div>
+  <div class="msg" id="add-msg"></div>
+
+  <hr>
+  <details class="sidebar-tools"><summary>标签与文献管理</summary>
+  <h3>论文标签</h3>
+  <div class="row">
+    <input type="number" id="tag-paper-id" placeholder="论文编号" style="flex:1">
+    <input type="text" id="tag-name" placeholder="标签, 例如: NLP" style="flex:2">
+    <button class="btn sm" onclick="addTag()">打标签</button>
+  </div>
+  <div class="msg" id="tag-msg"></div>
+
+  <hr>
+  <h3>删除论文</h3>
+  <div class="row">
+    <input type="number" id="del-paper-id" placeholder="论文编号">
+    <button class="btn danger sm" onclick="deletePaper()">删除</button>
+  </div>
+  <div class="msg" id="del-msg"></div>
+  </details>
+  <div class="sidebar-footer"><i data-lucide="hard-drive"></i><span>本地文献空间</span></div>
+</aside>
+
+<!-- ===== MAIN CONTENT ===== -->
+<main class="main">
+  <h1 class="app-title"><button class="btn icon-btn sidebar-toggle" id="sidebar-toggle" title="打开文献管理" aria-label="打开文献管理" aria-expanded="false"><i data-lucide="panel-left"></i></button>LitAgent <span>/ 研究工作台</span></h1>
+
+  <!-- Tab radios -->
+  <input type="radio" name="tab" class="tab-radio" id="tab5" checked>
+  <input type="radio" name="tab" class="tab-radio" id="tab1">
+  <input type="radio" name="tab" class="tab-radio" id="tab2">
+  <input type="radio" name="tab" class="tab-radio" id="tab3">
+  <input type="radio" name="tab" class="tab-radio" id="tab4">
+  <input type="radio" name="tab" class="tab-radio" id="tab6">
+
+  <div class="tab-nav">
+    <label for="tab5"><i data-lucide="book-open"></i>论文阅读</label>
+    <label for="tab6"><i data-lucide="notebook-pen"></i>我的笔记</label>
+    <label for="tab1"><i data-lucide="library"></i>我的文献库</label>
+    <label for="tab2"><i data-lucide="folders"></i>分类浏览</label>
+    <label for="tab3"><i data-lucide="search"></i>arXiv 搜索</label>
+    <label for="tab4"><i data-lucide="messages-square"></i>AI 对话</label>
+  </div>
+
+  <div class="tab-content">
+    <div class="tab-panel" id="panel5">
+      <div class="reading-heading"><div class="workspace-heading"><span class="workspace-kicker">RESEARCH / WORKSPACE</span><h2>阅读工作台<span class="heading-mark" aria-hidden="true">*</span></h2></div><span id="model-status" class="status-label">检查配置…</span></div>
+      <div class="reading-toolbar">
+        <label class="btn" title="上传 PDF"><i data-lucide="upload" aria-hidden="true"></i>导入 PDF<input id="pdf-upload" type="file" accept="application/pdf,.pdf" hidden></label>
+        <button class="btn icon-btn" id="refresh-reading" title="刷新论文与任务" aria-label="刷新论文与任务"><i data-lucide="refresh-cw"></i></button>
+        <span id="upload-status" role="status"></span>
+      </div>
+      <div class="reading-layout">
+        <section class="reading-input" aria-label="阅读任务设置">
+          <div id="single-paper-selection">
+            <label class="field-label" for="reading-papers">论文</label>
+            <div class="paper-search"><i data-lucide="search"></i><input id="paper-filter" type="search" placeholder="筛选论文标题" aria-label="筛选论文标题"></div>
+            <select id="reading-papers" multiple size="7" aria-label="选择阅读论文"></select>
+          </div>
+          <div id="compare-paper-selection" hidden>
+            <label class="field-label" for="compare-paper-a">论文 A</label>
+            <select id="compare-paper-a"><option value="">选择第一篇论文</option></select>
+            <label class="field-label" for="compare-paper-b">论文 B</label>
+            <select id="compare-paper-b"><option value="">选择第二篇论文</option></select>
+            <div id="compare-selection-status" class="status-label" role="status"></div>
+          </div>
+          <div id="selected-paper-title" class="selected-paper-title" role="status"></div>
+          <div class="reading-toolbar">
+            <button class="btn" id="process-paper" title="下载并建立全文索引"><i data-lucide="file-text"></i>处理全文</button>
+            <label class="check-label"><input id="force-process" type="checkbox">重新索引</label>
+          </div>
+          <div class="field-label">阅读模式</div>
+          <div class="segmented skill-grid" id="skill-control" role="group" aria-label="阅读模式"></div>
+          <div class="field-label">任务</div>
+          <div class="segmented" id="action-control" role="group" aria-label="任务类型"><button class="selected" data-action="summary">全文总结</button><button data-action="question">证据追问</button></div>
+          <label class="field-label" for="reading-template">笔记模板</label>
+          <div class="template-select-row"><select id="reading-template"><option value="">跟随阅读模式</option></select><button class="btn icon-btn" id="open-note-templates" title="管理个人模板" aria-label="管理个人模板"><i data-lucide="notebook-tabs"></i></button></div>
+          <label class="field-label" for="reading-message">阅读要求</label>
+          <textarea id="reading-message" rows="3" maxlength="6000">请总结这篇论文，解释核心方法、主要实验和局限。</textarea>
+          <div class="reading-options">
+            <label class="check-label"><input type="checkbox" id="verify-evidence" checked>自动核查引用依据</label>
+            <label class="check-label"><input type="checkbox" id="use-cache" checked>复用已提取的材料</label>
+            <label class="check-label"><input type="checkbox" id="use-personal">结合已选个人笔记与批注</label>
+          </div>
+          <div class="reading-toolbar">
+            <button class="btn primary" id="run-reading"><i data-lucide="play"></i>开始阅读</button>
+            <button class="btn icon-btn" id="cancel-reading" disabled title="停止任务" aria-label="停止任务"><i data-lucide="square"></i></button>
+            <button class="btn icon-btn" id="new-reading-session" title="新建阅读对话" aria-label="新建阅读对话"><i data-lucide="message-square-plus"></i></button>
+          </div>
+          <details class="profile-section"><summary><i data-lucide="sliders-horizontal"></i>阅读档案</summary>
+            <label class="field-label" for="profile-preset">研究档案模板</label>
+            <select id="profile-preset"><option value="">自定义档案</option></select>
+            <label class="field-label" for="profile-background">知识背景</label><textarea id="profile-background" rows="2" maxlength="1000"></textarea>
+            <label class="field-label" for="profile-purpose">阅读目的</label><input id="profile-purpose" maxlength="1000">
+            <label class="field-label" for="profile-focus">关注内容</label><input id="profile-focus" maxlength="1000">
+            <label class="field-label" for="profile-research_domain">研究方向</label><input id="profile-research_domain" maxlength="500">
+            <label class="field-label" for="profile-compute_budget">可用算力</label><input id="profile-compute_budget" maxlength="500" placeholder="例如：单卡 12 GB，训练时间两天">
+            <label class="field-label" for="profile-framework">计划采用的框架</label><input id="profile-framework" maxlength="500">
+            <label class="field-label" for="profile-known_topics">已掌握的知识</label><textarea id="profile-known_topics" rows="2" maxlength="1000"></textarea>
+            <div class="profile-options"><label>讲解深度<select id="profile-depth"><option value="intro">入门</option><option value="standard">标准</option><option value="advanced">深入</option></select></label>
+            <label>语言<input id="profile-language" maxlength="30"></label></div>
+            <div class="reading-toolbar"><button class="btn" id="save-profile"><i data-lucide="save"></i>保存</button><button class="btn icon-btn" id="reset-profile" title="重置档案" aria-label="重置档案"><i data-lucide="rotate-ccw"></i></button><span id="profile-status" role="status"></span></div>
+          </details>
+        </section>
+        <section class="reading-output" aria-label="原文与阅读结果">
+          <div class="result-heading">
+            <div class="reading-view-tabs" role="tablist" aria-label="阅读视图">
+              <button id="pdf-view-tab" type="button" role="tab" aria-selected="false" aria-controls="reading-pdf-panel" tabindex="-1"><i data-lucide="file-text"></i>PDF 原文</button>
+              <button id="notes-view-tab" type="button" role="tab" aria-selected="true" aria-controls="reading-notes-panel"><i data-lucide="notebook-pen"></i>阅读笔记</button>
+            </div>
+            <div class="result-actions"><span id="run-state" class="status-label" role="status">未开始</span><button class="btn icon-btn" id="focus-reading" title="专注阅读" aria-label="专注阅读" aria-pressed="false"><i data-lucide="maximize-2"></i></button></div>
+          </div>
+          <div id="reading-pdf-panel" role="tabpanel" aria-labelledby="pdf-view-tab" hidden>
+            <div id="preview-paper-tabs" class="segmented preview-paper-tabs" role="group" aria-label="预览论文" hidden></div>
+            <div id="reading-pdf-preview"></div>
+          </div>
+          <div id="reading-notes-panel" role="tabpanel" aria-labelledby="notes-view-tab">
+          <div id="task-progress" role="status"></div>
+          <div id="reading-result" class="reading-result"><div class="empty-state"><img src="/static/reading-paper.png" width="360" height="230" alt="" aria-hidden="true"><span>暂无阅读笔记</span></div></div>
+          <div id="reading-metrics" class="status-label"></div>
+          <button class="btn" id="open-saved-note" hidden><i data-lucide="folder-open"></i>在笔记库中打开</button>
+          <div id="citation-list" class="citation-list"></div>
+          <details id="evidence-review" hidden><summary>引用依据核查</summary><p id="evidence-review-status" class="status-label"></p><div id="evidence-review-claims"></div></details>
+          <details id="note-editor" hidden><summary>编辑与审核</summary>
+            <label class="field-label" for="note-versions">笔记版本</label><select id="note-versions"></select>
+            <textarea id="note-body" rows="12" maxlength="50000" aria-label="笔记正文"></textarea>
+            <label class="field-label" for="note-feedback">修改与审核说明</label><textarea id="note-feedback" rows="2" maxlength="2000"></textarea>
+            <label class="check-label"><input type="checkbox" id="note-approved">已人工核对原文，同意纳入训练样本</label>
+            <div class="reading-toolbar"><button class="btn" id="save-note"><i data-lucide="save"></i>保存新版本</button><a id="download-note" class="btn" href="#" title="下载笔记"><i data-lucide="download"></i>笔记</a><a class="btn" href="/api/exports/sft" title="导出已审核样本"><i data-lucide="database"></i>审核样本</a></div>
+          </details>
+          </div>
+        </section>
+      </div>
+      <section class="task-section"><div class="result-heading"><h3>任务记录</h3><span id="tasks-status" role="status"></span></div><div class="task-table-wrap"><table><thead><tr><th>时间</th><th>任务</th><th>状态</th><th>阶段</th><th>操作</th></tr></thead><tbody id="reading-tasks"></tbody></table></div></section>
+    </div>
+    <div class="tab-panel" id="panel6">
+      <div class="reading-heading notebook-heading">
+        <div class="workspace-heading"><span class="workspace-kicker">RESEARCH / NOTEBOOK</span><h2>我的笔记<span class="heading-mark" aria-hidden="true">*</span></h2></div>
+        <div class="notebook-actions"><button class="btn" id="notebook-templates"><i data-lucide="notebook-tabs"></i>个人模板</button><button class="btn icon-btn" id="notebook-refresh" title="刷新笔记" aria-label="刷新笔记"><i data-lucide="refresh-cw"></i></button></div>
+      </div>
+      <div class="notebook-filters">
+        <div class="paper-search"><i data-lucide="search"></i><input id="notebook-search" type="search" placeholder="搜索笔记或论文" aria-label="搜索笔记或论文"></div>
+        <select id="notebook-category" aria-label="笔记分类夹"><option value="">全部分类夹</option></select>
+        <select id="notebook-skill" aria-label="笔记阅读模式"><option value="">全部阅读模式</option></select>
+        <select id="notebook-filter" aria-label="笔记范围"><option value="all">全部笔记</option><option value="starred">收藏</option><option value="trash">回收站</option></select>
+        <button class="btn" id="notebook-clear-paper" hidden><i data-lucide="x"></i><span>取消论文筛选</span></button>
+      </div>
+      <div class="notebook-layout" id="notebook-layout">
+        <aside class="notebook-list-pane" aria-label="笔记列表">
+          <div class="notebook-list-heading"><span id="notebook-count" role="status">加载中…</span><button class="btn icon-btn" id="notebook-collapse" title="收起笔记列表" aria-label="收起笔记列表"><i data-lucide="panel-left-close"></i></button></div>
+          <div id="notebook-list"></div>
+          <div class="notebook-pagination"><button class="btn icon-btn" id="notebook-prev" title="上一组笔记" aria-label="上一组笔记"><i data-lucide="chevron-left"></i></button><span id="notebook-page"></span><button class="btn icon-btn" id="notebook-next" title="下一组笔记" aria-label="下一组笔记"><i data-lucide="chevron-right"></i></button></div>
+        </aside>
+        <div class="notebook-workspace">
+          <button class="btn notebook-expand" id="notebook-expand"><i data-lucide="panel-left-open"></i>笔记列表</button>
+          <div class="notebook-empty" id="notebook-empty"><i data-lucide="notebook-pen"></i><span>选择一篇笔记</span></div>
+          <section id="notebook-detail" hidden>
+            <div class="notebook-title-row"><input id="notebook-title" aria-label="笔记标题" maxlength="160"><button class="btn icon-btn" id="notebook-save-title" title="保存标题" aria-label="保存标题"><i data-lucide="check"></i></button><button class="btn icon-btn" id="notebook-star" title="收藏笔记" aria-label="收藏笔记" aria-pressed="false"><i data-lucide="star"></i></button></div>
+            <div id="notebook-meta" class="status-label"></div>
+            <label class="check-label notebook-personal-option"><input id="notebook-personal" type="checkbox">将此版本用于后续问答</label>
+            <div id="notebook-papers" class="notebook-paper-links"></div>
+            <div class="notebook-actions notebook-toolbar">
+              <select id="notebook-versions" aria-label="笔记历史版本"></select>
+              <button class="btn icon-btn" id="notebook-edit" title="编辑笔记" aria-label="编辑笔记"><i data-lucide="square-pen"></i></button>
+              <a class="btn icon-btn" id="notebook-download" title="导出 Markdown" aria-label="导出 Markdown"><i data-lucide="download"></i></a>
+              <a class="btn icon-btn" id="notebook-bundle" title="导出笔记与 PDF" aria-label="导出笔记与 PDF"><i data-lucide="package"></i></a>
+              <button class="btn icon-btn" id="notebook-show-template" title="查看生成时的模板" aria-label="查看生成时的模板"><i data-lucide="notebook-tabs"></i></button>
+              <button class="btn icon-btn danger" id="notebook-trash" title="移入回收站" aria-label="移入回收站"><i data-lucide="trash-2"></i></button>
+              <button class="btn" id="notebook-restore" hidden><i data-lucide="undo-2"></i>恢复笔记</button>
+            </div>
+            <div class="segmented notebook-view-switch" role="group" aria-label="笔记对照视图"><button data-note-view="note" class="selected">笔记</button><button data-note-view="pdf">PDF 原文</button></div>
+            <div class="notebook-surface" id="notebook-surface" data-view="note">
+              <article class="notebook-document">
+                <div id="notebook-body" class="reading-result"></div>
+                <div id="notebook-edit-form" hidden>
+                  <label class="field-label" for="notebook-editor">笔记正文</label><textarea id="notebook-editor" maxlength="50000" rows="20"></textarea>
+                  <label class="field-label" for="notebook-feedback">修改与审核说明</label><textarea id="notebook-feedback" maxlength="2000" rows="2"></textarea>
+                  <label class="check-label"><input id="notebook-approved" type="checkbox">已人工核对原文，同意纳入训练样本</label>
+                  <div class="notebook-actions"><button class="btn primary" id="notebook-save"><i data-lucide="save"></i>保存新版本</button><button class="btn" id="notebook-cancel-edit">取消</button></div>
+                </div>
+              </article>
+              <section class="notebook-original" aria-label="笔记对应原文">
+                <select id="notebook-source" aria-label="笔记对应论文"></select>
+                <div id="notebook-evidence" hidden><strong id="notebook-evidence-label"></strong><p id="notebook-evidence-text"></p></div>
+                <div id="notebook-pdf"></div>
+              </section>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+    <!-- ===== TAB 1: My Library ===== -->
+    <div class="tab-panel" id="panel1">
+      <div class="toolbar">
+        <h2>库中论文</h2>
+        <button class="btn" onclick="refreshLibrary()">刷新列表</button>
+      </div>
+      <div class="library-table-wrap">
+        <table id="lib-table-body">
+          <thead><tr><th>编号</th><th>标题</th><th>年份</th><th>作者</th><th>标签</th><th>分类夹</th><th>笔记</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div class="detail-panel" id="lib-detail">
+        <div id="lib-pdf-preview"></div>
+        <div id="lib-detail-content"></div>
+        <div style="margin-top:8px; font-size:13px; color:#6b7280;">
+          arXiv ID: <span id="lib-detail-arxiv">—</span>
+          &nbsp;|&nbsp; PDF: <a id="lib-detail-pdf" href="#" target="_blank">打开</a>
+        </div>
+        <details class="accordion" style="margin-top:8px">
+          <summary>BibTeX 引用</summary>
+          <pre id="lib-detail-bibtex" style="font-size:12px; overflow-x:auto; margin:8px;"></pre>
+        </details>
+        <details class="accordion">
+          <summary>归类</summary>
+          <div class="body">
+            <div class="row">
+              <input type="number" id="mcat-paper-id" placeholder="论文编号" style="flex:1">
+              <select id="mcat-cat-dd" style="flex:2"><option value="">选择分类夹...</option></select>
+              <button class="btn sm primary" onclick="categorizePaper()">移入</button>
+              <button class="btn sm" onclick="removeFromCategory()">移出</button>
+            </div>
+            <div class="msg" id="mcat-msg"></div>
+          </div>
+        </details>
+        <details class="accordion">
+          <summary>导出</summary>
+          <div class="body">
+            <div class="row">
+              <input type="text" id="export-ids" placeholder="编号, 逗号分隔, 例如: 1,2,3" style="flex:3">
+              <button class="btn sm" onclick="exportBibtex()">导出 BibTeX</button>
+            </div>
+            <pre id="export-output" style="font-size:12px; margin-top:4px;"></pre>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <!-- ===== TAB 2: Browse by Category ===== -->
+    <div class="tab-panel" id="panel2">
+      <div class="toolbar">
+        <h2>按分类夹浏览</h2>
+        <div style="display:flex; gap:6px; align-items:center;">
+          <button class="btn" onclick="refreshCategoryBrowse()">刷新</button>
+          <button class="btn primary sm" onclick="quickCreateCategory()">+ 新建</button>
+        </div>
+      </div>
+      <div style="margin-bottom:12px;">
+        <select id="browse-cat-dd" onchange="browseCategory(this.value)" style="padding:8px; border:1px solid #d1d5db; border-radius:6px; min-width:200px;">
+          <option value="">选择分类夹...</option>
+        </select>
+        <span id="browse-info" style="margin-left:8px; font-size:13px; color:#6b7280;"></span>
+      </div>
+      <div class="library-table-wrap"><table id="cat-table-body">
+        <thead><tr><th>编号</th><th>标题</th><th>年份</th><th>作者</th><th>标签</th></tr></thead>
+        <tbody></tbody>
+      </table></div>
+      <div class="detail-panel" id="cat-detail">
+        <div id="cat-pdf-preview"></div>
+        <div id="cat-detail-content"></div>
+        <div style="margin-top:8px; font-size:13px;">
+          arXiv ID: <span id="cat-detail-arxiv">—</span>
+          &nbsp;|&nbsp; PDF: <a id="cat-detail-pdf" href="#" target="_blank">打开</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== TAB 3: arXiv Search ===== -->
+    <div class="tab-panel" id="panel3">
+      <div class="toolbar">
+        <h2>arXiv 搜索</h2>
+      </div>
+      <div style="display:flex; gap:8px; margin-bottom:12px;">
+        <input type="text" id="search-query" placeholder="例如: attention mechanism in transformers" style="flex:4; padding:8px; border:1px solid #d1d5db; border-radius:6px;">
+        <input type="number" id="search-n" value="10" min="3" max="30" style="flex:1; padding:8px; border:1px solid #d1d5db; border-radius:6px; max-width:80px;">
+        <button class="btn primary" onclick="searchArxiv()">搜索</button>
+      </div>
+      <div class="msg" id="search-status"></div>
+      <table id="search-table-body">
+        <thead><tr><th>arXiv ID</th><th>标题</th><th>年份</th><th>作者</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div style="margin-top:8px; display:flex; gap:8px; align-items:center;">
+        <input type="text" id="selected-arxiv-id" placeholder="点击表格行或手动输入 arXiv ID" style="flex:1; padding:6px 8px; border:1px solid #d1d5db; border-radius:6px;">
+        <button class="btn primary sm" onclick="addFromSearch()">添加到文献库</button>
+        <span class="msg" id="search-add-msg"></span>
+      </div>
+    </div>
+
+    <!-- ===== TAB 4: AI Chat ===== -->
+    <div class="tab-panel" id="panel4">
+      <div style="display:flex; gap:8px; margin-bottom:10px; align-items:center;">
+        <select id="history-dd" style="flex:2; padding:8px; border:1px solid #d1d5db; border-radius:6px;" onchange="loadSession(this.value)">
+          <option value="">新对话</option>
+        </select>
+        <button class="btn sm" onclick="newSession()">+ 新对话</button>
+        <button class="btn danger sm" onclick="deleteSession()">删除</button>
+      </div>
+      <div class="chat-area" id="chat-area">
+        <div class="chat-empty">开始新的对话 — 输入研究主题或文献管理指令</div>
+      </div>
+      <div id="chat-run-status" class="status-label" role="status"></div>
+      <div class="chat-input-row">
+        <input type="text" id="chat-input" placeholder="例如：帮我找几篇关于无人机集群对抗的论文" onkeydown="if(event.key==='Enter') sendMessage()">
+        <button class="btn primary" id="send-btn" onclick="sendMessage()">发送</button>
+      </div>
+    </div>
+  </div>
+</main>
+</div>
+<button id="sidebar-backdrop" class="sidebar-backdrop" aria-label="关闭文献管理" hidden></button>
+
+<div id="toast" class="toast" style="display:none;"></div>
+<dialog id="templates-dialog" class="templates-dialog">
+  <div class="template-dialog-heading"><h2>个人笔记模板</h2><button class="btn icon-btn" id="templates-close" title="关闭模板管理" aria-label="关闭模板管理"><i data-lucide="x"></i></button></div>
+  <div class="template-workspace">
+    <aside class="template-list-pane"><button class="btn" id="template-new"><i data-lucide="plus"></i>新建模板</button><div id="template-list"></div></aside>
+    <section id="template-editor" class="template-editor-pane" aria-busy="false">
+      <div class="template-fields"><label>模板名称<input id="template-name" maxlength="80"></label><label>用途<input id="template-description" maxlength="300"></label></div>
+      <div class="template-editor-toolbar">
+        <select id="template-variable" aria-label="插入动态字段" title="在正文光标处插入，生成笔记时自动填入对应内容" disabled><option value="">插入动态字段</option></select>
+        <label id="template-history" class="template-history" hidden><i data-lucide="history"></i>版本历史<select id="template-versions" aria-label="模板历史版本" title="查看历史内容；保存会创建新版本"></select></label>
+        <span id="template-state" class="status-label" role="status"></span>
+        <span id="template-insert-status" class="template-insert-status" role="status" hidden></span>
+        <button class="btn icon-btn" id="template-retry" title="重试加载模板" aria-label="重试加载模板" hidden><i data-lucide="refresh-cw"></i></button>
+      </div>
+      <div class="template-compose">
+        <label class="template-source-label">模板正文<textarea id="template-body" maxlength="12000" spellcheck="false" rows="18" placeholder="正在加载模板正文…"></textarea></label>
+        <div class="template-preview-wrap"><span class="field-label">结构预览</span><div id="template-preview" class="reading-result"></div></div>
+      </div>
+      <div class="template-footer"><div class="notebook-actions"><button class="btn primary" id="template-save"><i data-lucide="save"></i>保存模板</button><button class="btn" id="template-copy"><i data-lucide="copy"></i>另存为个人模板</button><button class="btn icon-btn danger" id="template-delete" title="删除个人模板" aria-label="删除个人模板"><i data-lucide="trash-2"></i></button></div><button class="btn" id="template-use"><i data-lucide="check"></i>用于本次阅读</button></div>
+    </section>
+  </div>
+</dialog>
+<dialog id="template-snapshot-dialog" class="template-snapshot-dialog"><div class="template-dialog-heading"><h2 id="template-snapshot-title"></h2><button class="btn icon-btn" id="template-snapshot-close" title="关闭模板快照" aria-label="关闭模板快照"><i data-lucide="x"></i></button></div><div id="template-snapshot-body" class="reading-result"></div></dialog>
+
+<script>
+// ============================================================================
+// Utility helpers
+// ============================================================================
+let _currentLibRows = [];
+let _paperNoteCounts = {};
+let _currentCatRows = [];
+let _currentSearchRows = [];
+let _currentSessionId = null;
+let _agentMsgs = [];
+let _chatHistory = [];
+
+function $(id) { return document.getElementById(id); }
+function esc(value) { return String(value ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+function toast(msg, type='info') {
+  const t = $('toast');
+  t.textContent = msg; t.className = 'toast ' + type; t.style.display = 'block';
+  setTimeout(() => { t.style.display = 'none'; }, 3000);
+}
+
+async function api(url, opts={}) {
+  const res = await fetch(url, { headers: {'Content-Type': 'application/json'}, ...opts });
+  if (!res.ok) { const e = await res.text(); throw new Error(e || res.statusText); }
+  return res.json();
+}
+
+// Markdown-like renderer for chat messages and content
+function renderMd(text) {
+  if (!text) return '';
+  let html = text;
+  // Escape HTML entities first
+  html = html.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  // Code blocks (triple-backtick)
+  html = html.replace(/```(\w*)\r?\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
+  html = html.replace(/```\r?\n([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+
+  // Inline code (single backtick)
+  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+  // Bold and italic
+  html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '<em>$1</em>');
+
+  // Markdown tables — detect and convert before newline processing
+  const lines = html.split('\n');
+  const result = [];
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i].trim();
+    // Check for table: current line has pipes, next line is separator (---|---)
+    if (line.indexOf('|') >= 0 && i + 2 < lines.length) {
+      const sep = lines[i + 1].trim();
+      if (/^[\|\s\-:]+$/.test(sep) && sep.indexOf('---') >= 0) {
+        // Collect table rows
+        const tableRows = [];
+        tableRows.push(line); // header
+        tableRows.push(sep);  // separator
+        i += 2;
+        while (i < lines.length && lines[i].trim().indexOf('|') >= 0) {
+          tableRows.push(lines[i].trim());
+          i++;
+        }
+        // Build HTML table
+        let tbl = '<table>';
+        for (let ri = 0; ri < tableRows.length; ri++) {
+          if (/^[\|\s\-:]+$/.test(tableRows[ri])) continue; // skip separator
+          const cells = tableRows[ri].replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+          const tag = ri === 0 ? 'th' : 'td';
+          tbl += '<tr>';
+          for (const cell of cells) {
+            tbl += `<${tag}>${cell}</${tag}>`;
+          }
+          tbl += '</tr>';
+        }
+        tbl += '</table>';
+        result.push(tbl);
+        continue;
+      }
+    }
+    result.push(line);
+    i++;
+  }
+  html = result.join('\n');
+
+  // Headers
+  html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+  html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+
+  // Unordered and ordered list items
+  html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
+  html = html.replace(/^\d+\.\s+(.+)$/gm, '<li>$1</li>');
+
+  // Convert color dot placeholders: !!DOT:RRGGBB!! → colored span
+  html = html.replace(/!!DOT:([a-fA-F0-9]{6})!!/g, '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#$1;margin-right:4px;"></span>');
+
+  // Protect HTML blocks from <br> injection (tables, code blocks, etc.)
+  const htmlBlocks = [];
+  const blockRe = /<(table|pre|code|tr|td|th|thead|tbody)[\s>][\s\S]*?<\/\1>/g;
+  let bm;
+  while ((bm = blockRe.exec(html)) !== null) {
+    htmlBlocks.push(bm[0]);
+  }
+  for (let bi = 0; bi < htmlBlocks.length; bi++) {
+    html = html.replace(htmlBlocks[bi], `\x00BLOCK${bi}\x00`);
+  }
+
+  // Line breaks (double → paragraphs, single → <br>)
+  html = html.replace(/\n\n/g, '</p><p>');
+  html = html.replace(/\n/g, '<br>');
+
+  // Restore protected HTML blocks
+  for (let bi = 0; bi < htmlBlocks.length; bi++) {
+    html = html.replace(`\x00BLOCK${bi}\x00`, htmlBlocks[bi]);
+  }
+
+  return '<div class="content-md"><p>' + html + '</p></div>';
+}
+
+// ============================================================================
+// Library
+// ============================================================================
+async function refreshLibrary() {
+  const [data, counts] = await Promise.all([api('/api/library/rows'), api('/api/notes/paper-counts')]);
+  _paperNoteCounts = Object.fromEntries(counts.map(item => [item.paper_id,item.count]));
+  _currentLibRows = data.rows || [];
+  renderLibTable(_currentLibRows);
+  updateSidebar(data.stats_md, data.cat_md);
+}
+
+function renderLibTable(rows) {
+  const tbody = document.querySelector('#lib-table-body tbody');
+  tbody.innerHTML = rows.map((r, i) =>
+    `<tr data-idx="${i}" onclick="selectLibRow(${i})">
+      <td>${esc(r[0])}</td><td>${esc(r[1])}</td><td>${esc(r[2])}</td><td>${esc(r[3])}</td><td>${esc(r[4])}</td><td>${esc(r[5])}</td>
+      <td><button class="btn note-count-button" title="查看相关笔记" onclick="event.stopPropagation(); LitNotebook.openPaper(${Number(r[0])})">${_paperNoteCounts[r[0]] || 0} 篇</button></td>
+    </tr>`
+  ).join('');
+}
+
+let librarySelection = 0;
+async function selectLibRow(idx) {
+  const row = _currentLibRows[idx];
+  if (!row) return;
+  const paperId = row[0];
+  const selection = ++librarySelection;
+  // Highlight
+  document.querySelectorAll('#lib-table-body tbody tr').forEach(r => r.classList.remove('selected'));
+  document.querySelector(`#lib-table-body tbody tr[data-idx="${idx}"]`)?.classList.add('selected');
+
+  $('lib-detail').classList.add('active');
+  $('lib-detail-content').textContent = '';
+  window.LitPDF.show('lib-pdf-preview', paperId, row[1]);
+  $('lib-detail').scrollIntoView({block:'start', behavior:'instant'});
+  const data = await api(`/api/library/detail/${paperId}`);
+  if (selection !== librarySelection) return;
+  $('lib-detail-content').innerHTML = renderMd(data.md);
+  $('lib-detail-arxiv').textContent = data.arxiv_id || '—';
+  const pdfLink = $('lib-detail-pdf');
+  if (data.pdf_url) { pdfLink.href = data.pdf_url; pdfLink.style.display = ''; }
+  else { pdfLink.style.display = 'none'; }
+  $('lib-detail-bibtex').textContent = data.bibtex || '';
+  $('mcat-paper-id').value = paperId;
+  $('tag-paper-id').value = paperId;
+  $('del-paper-id').value = paperId;
+  $('export-ids').value = paperId;
+}
+
+async function addToLibrary() {
+  const arxivId = $('arxiv-id-input').value.trim();
+  if (!arxivId) { $('add-msg').textContent = '请输入 arXiv ID。'; $('add-msg').className = 'msg error'; return; }
+  try {
+    const data = await api('/api/library/add', {method:'POST', body: JSON.stringify({arxiv_id: arxivId})});
+    $('add-msg').textContent = data.msg; $('add-msg').className = data.ok ? 'msg success' : 'msg error';
+    $('arxiv-id-input').value = '';
+    _currentLibRows = data.rows || [];
+    renderLibTable(_currentLibRows);
+    updateSidebar(data.stats_md, data.cat_md);
+  } catch(e) { $('add-msg').textContent = e.message; $('add-msg').className = 'msg error'; }
+}
+
+async function addTag() {
+  const paperId = parseInt($('tag-paper-id').value);
+  const tagName = $('tag-name').value.trim();
+  if (!paperId || !tagName) { $('tag-msg').textContent = '请填写论文编号和标签。'; $('tag-msg').className = 'msg error'; return; }
+  const data = await api('/api/library/tag', {method:'POST', body: JSON.stringify({paper_id: paperId, tag_name: tagName})});
+  $('tag-msg').textContent = data.msg; $('tag-msg').className = data.ok ? 'msg success' : 'msg error';
+  $('tag-name').value = '';
+  _currentLibRows = data.rows || [];
+  renderLibTable(_currentLibRows);
+  updateSidebar(data.stats_md, null);
+}
+
+async function deletePaper() {
+  const paperId = parseInt($('del-paper-id').value);
+  if (!paperId) { $('del-msg').textContent = '请输入论文编号。'; $('del-msg').className = 'msg error'; return; }
+  if (!confirm(`确认删除编号为 ${paperId} 的论文？`)) return;
+  const data = await api(`/api/library/${paperId}`, {method:'DELETE'});
+  $('del-msg').textContent = data.msg; $('del-msg').className = data.ok ? 'msg success' : 'msg error';
+  $('del-paper-id').value = '';
+  $('lib-detail').classList.remove('active');
+  _currentLibRows = data.rows || [];
+  renderLibTable(_currentLibRows);
+  updateSidebar(data.stats_md, data.cat_md);
+}
+
+async function exportBibtex() {
+  const ids = $('export-ids').value.trim();
+  if (!ids) { $('export-output').textContent = '请输入论文编号。'; return; }
+  const data = await api('/api/library/export', {method:'POST', body: JSON.stringify({paper_ids: ids})});
+  $('export-output').textContent = data.bibtex;
+}
+
+function updateSidebar(statsMd, catMd) {
+  if (statsMd) $('sidebar-stats').innerHTML = renderMd(statsMd);
+  if (catMd) $('sidebar-cats').innerHTML = renderMd(catMd);
+  // Also refresh category dropdowns
+  refreshCategoryDropdowns();
+}
+
+// ============================================================================
+// Categories
+// ============================================================================
+async function refreshCategoryDropdowns() {
+  const cats = await api('/api/categories');
+  const opts = cats.map(c => `<option value="${c.id}">${esc(c.name)} (${c.approved_count})</option>`).join('');
+  const html = '<option value="">选择分类夹...</option>' + opts;
+  $('mgmt-cat-dd').innerHTML = html;
+  $('mcat-cat-dd').innerHTML = html;
+  $('browse-cat-dd').innerHTML = html;
+}
+
+async function createCategory() {
+  const name = $('new-cat-name').value.trim();
+  if (!name) { $('create-cat-msg').textContent = '请输入名称。'; $('create-cat-msg').className = 'msg error'; return; }
+  const color = $('new-cat-color').value;
+  try {
+    const data = await api('/api/categories', {method:'POST', body: JSON.stringify({name, color})});
+    $('create-cat-msg').textContent = data.msg; $('create-cat-msg').className = data.ok ? 'msg success' : 'msg error';
+    if (data.ok) { $('new-cat-name').value = ''; }
+    updateSidebar(null, data.cat_md);
+  } catch(e) { $('create-cat-msg').textContent = e.message; $('create-cat-msg').className = 'msg error'; }
+}
+
+async function quickCreateCategory() {
+  const name = prompt('请输入新分类夹名称：');
+  if (!name || !name.trim()) return;
+  try {
+    const data = await api('/api/categories', {method:'POST', body: JSON.stringify({name: name.trim(), description: '', color: '#6b7280'})});
+    toast(data.msg, data.ok ? 'success' : 'error');
+    updateSidebar(null, data.cat_md);
+    // Refresh the browse tab's dropdown
+    await refreshCategoryDropdowns();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function renameCategory() {
+  const catId = $('mgmt-cat-dd').value;
+  const newName = $('rename-cat-input').value.trim();
+  if (!catId || !newName) { $('manage-cat-msg').textContent = '请选择分类夹并输入新名称。'; $('manage-cat-msg').className = 'msg error'; return; }
+  const data = await api(`/api/categories/${catId}`, {method:'PUT', body: JSON.stringify({name: newName})});
+  $('manage-cat-msg').textContent = data.msg; $('manage-cat-msg').className = data.ok ? 'msg success' : 'msg error';
+  if (data.ok) { $('rename-cat-input').value = ''; }
+  updateSidebar(null, data.cat_md);
+}
+
+async function deleteCategory() {
+  const catId = $('mgmt-cat-dd').value;
+  if (!catId) { $('manage-cat-msg').textContent = '请选择分类夹。'; $('manage-cat-msg').className = 'msg error'; return; }
+  if (!confirm('确认删除该分类夹？')) return;
+  const data = await api(`/api/categories/${catId}`, {method:'DELETE'});
+  $('manage-cat-msg').textContent = data.msg; $('manage-cat-msg').className = data.ok ? 'msg success' : 'msg error';
+  updateSidebar(null, data.cat_md);
+  // Refresh browse tab
+  browseCategory($('browse-cat-dd').value);
+}
+
+async function categorizePaper() {
+  const paperId = parseInt($('mcat-paper-id').value);
+  const catId = parseInt($('mcat-cat-dd').value);
+  if (!paperId || !catId) { $('mcat-msg').textContent = '请填写论文编号并选择目标分类夹。'; $('mcat-msg').className = 'msg error'; return; }
+  const data = await api('/api/categories/assign', {method:'POST', body: JSON.stringify({paper_id: paperId, category_id: catId})});
+  $('mcat-msg').textContent = data.msg; $('mcat-msg').className = data.ok ? 'msg success' : 'msg error';
+  updateSidebar(null, data.cat_md);
+}
+
+async function removeFromCategory() {
+  const paperId = parseInt($('mcat-paper-id').value);
+  const catId = parseInt($('mcat-cat-dd').value);
+  if (!paperId || !catId) { $('mcat-msg').textContent = '请填写论文编号并选择分类夹。'; $('mcat-msg').className = 'msg error'; return; }
+  const data = await api('/api/categories/remove', {method:'POST', body: JSON.stringify({paper_id: paperId, category_id: catId})});
+  $('mcat-msg').textContent = data.msg; $('mcat-msg').className = data.ok ? 'msg success' : 'msg error';
+  updateSidebar(null, data.cat_md);
+}
+
+async function browseCategory(catId) {
+  if (!catId) {
+    document.querySelector('#cat-table-body tbody').innerHTML = '';
+    $('browse-info').textContent = '';
+    return;
+  }
+  const data = await api(`/api/categories/${catId}/papers`);
+  _currentCatRows = data.rows || [];
+  document.querySelector('#cat-table-body tbody').innerHTML = _currentCatRows.map((r, i) =>
+    `<tr data-idx="${i}" onclick="selectCatRow(${i})">
+      <td>${esc(r[0])}</td><td>${esc(r[1])}</td><td>${esc(r[2])}</td><td>${esc(r[3])}</td><td>${esc(r[4])}</td>
+    </tr>`
+  ).join('');
+  $('browse-info').innerHTML = renderMd(data.info || '');
+}
+
+let categorySelection = 0;
+async function selectCatRow(idx) {
+  const row = _currentCatRows[idx];
+  if (!row) return;
+  const selection = ++categorySelection;
+  document.querySelectorAll('#cat-table-body tbody tr').forEach(r => r.classList.remove('selected'));
+  document.querySelector(`#cat-table-body tbody tr[data-idx="${idx}"]`)?.classList.add('selected');
+  $('cat-detail').classList.add('active');
+  $('cat-detail-content').textContent = '';
+  window.LitPDF.show('cat-pdf-preview', row[0], row[1]);
+  $('cat-detail').scrollIntoView({block:'start', behavior:'instant'});
+  const data = await api(`/api/library/detail/${row[0]}`);
+  if (selection !== categorySelection) return;
+  $('cat-detail-content').innerHTML = renderMd(data.md);
+  $('cat-detail-arxiv').textContent = data.arxiv_id || '—';
+  const pdfLink = $('cat-detail-pdf');
+  if (data.pdf_url) { pdfLink.href = data.pdf_url; pdfLink.style.display = ''; }
+  else { pdfLink.style.display = 'none'; }
+}
+
+async function refreshCategoryBrowse() {
+  await refreshCategoryDropdowns();
+  browseCategory($('browse-cat-dd').value);
+  updateSidebar(null, null);
+  // Get fresh data
+  const data = await api('/api/library/rows');
+  updateSidebar(data.stats_md, data.cat_md);
+}
+
+// ============================================================================
+// arXiv Search
+// ============================================================================
+async function searchArxiv() {
+  const query = $('search-query').value.trim();
+  const maxResults = parseInt($('search-n').value) || 10;
+  if (!query) { $('search-status').textContent = '请输入搜索关键词。'; $('search-status').className = 'msg error'; return; }
+  $('search-status').textContent = '搜索中...'; $('search-status').className = 'msg';
+  try {
+    const data = await api(`/api/search?query=${encodeURIComponent(query)}&max_results=${maxResults}`);
+    _currentSearchRows = data.rows || [];
+    document.querySelector('#search-table-body tbody').innerHTML = _currentSearchRows.map((r, i) =>
+      `<tr data-idx="${i}" onclick="selectSearchRow(${i})">
+        <td>${esc(r[0])}</td><td>${esc(r[1])}</td><td>${esc(r[2])}</td><td>${esc(r[3])}</td>
+      </tr>`
+    ).join('');
+    $('search-status').textContent = data.status || ''; $('search-status').className = data.ok ? 'msg success' : 'msg';
+  } catch(e) {
+    $('search-status').textContent = e.message; $('search-status').className = 'msg error';
+  }
+}
+
+function selectSearchRow(idx) {
+  const row = _currentSearchRows[idx];
+  if (!row) return;
+  document.querySelectorAll('#search-table-body tbody tr').forEach(r => r.classList.remove('selected'));
+  document.querySelector(`#search-table-body tbody tr[data-idx="${idx}"]`)?.classList.add('selected');
+  $('selected-arxiv-id').value = row[0];
+}
+
+async function addFromSearch() {
+  const arxivId = $('selected-arxiv-id').value.trim();
+  if (!arxivId) { $('search-add-msg').textContent = '请选择或输入 arXiv ID。'; $('search-add-msg').className = 'msg error'; return; }
+  try {
+    const data = await api('/api/library/add', {method:'POST', body: JSON.stringify({arxiv_id: arxivId})});
+    $('search-add-msg').textContent = data.msg; $('search-add-msg').className = data.ok ? 'msg success' : 'msg error';
+    if (data.ok) { $('selected-arxiv-id').value = ''; }
+    // Refresh library data
+    _currentLibRows = data.rows || [];
+    renderLibTable(_currentLibRows);
+    updateSidebar(data.stats_md, data.cat_md);
+  } catch(e) { $('search-add-msg').textContent = e.message; $('search-add-msg').className = 'msg error'; }
+}
+
+// ============================================================================
+// Chat
+// ============================================================================
+async function refreshSessionList() {
+  const data = await api('/api/sessions');
+  $('history-dd').replaceChildren(new Option('新对话', ''));
+  for (const s of data) $('history-dd').add(new Option(`${s.title.substring(0,30)} (${s.message_count}条)`, s.id));
+}
+
+function renderChat() {
+  const area = $('chat-area');
+  if (_chatHistory.length === 0) {
+    area.innerHTML = '<div class="chat-empty">开始新的对话 — 输入研究主题或文献管理指令</div>';
+    return;
+  }
+  area.innerHTML = _chatHistory.map(m =>
+    `<div class="chat-msg ${m.role}">${renderMd(m.content)}</div>`
+  ).join('');
+  area.scrollTop = area.scrollHeight;
+}
+
+async function sendMessage() {
+  return window.LitReading.sendChat();
+}
+
+async function loadSession(sid) {
+  if (!sid) { newSession(); return; }
+  const data = await api(`/api/sessions/${sid}`);
+  _chatHistory = data.messages || [];
+  $('chat-run-status').textContent = data.legacy_context ? '历史聊天已保留；下一轮将建立新的模型上下文。' : '';
+  _currentSessionId = parseInt(sid);
+  renderChat();
+}
+
+async function newSession() {
+  _chatHistory = [];
+  _agentMsgs = [];
+  _currentSessionId = null;
+  renderChat();
+  $('history-dd').value = '';
+  // Actually create it on the server on first message
+}
+
+async function deleteSession() {
+  const sid = $('history-dd').value;
+  if (!sid) return;
+  if (!confirm('确认删除该对话记录？')) return;
+  await api(`/api/sessions/${sid}`, {method:'DELETE'});
+  if (_currentSessionId == sid) { newSession(); }
+  await refreshSessionList();
+}
+
+// ============================================================================
+// Initialization
+// ============================================================================
+async function init() {
+  // Load initial library data
+  const libData = await api('/api/library/rows');
+  _currentLibRows = libData.rows || [];
+  renderLibTable(_currentLibRows);
+  updateSidebar(libData.stats_md, libData.cat_md);
+
+  // Load sessions
+  await refreshSessionList();
+
+  // Load categories into dropdowns
+  await refreshCategoryDropdowns();
+}
+
+// Tab switching preserves scroll
+document.querySelectorAll('.tab-radio').forEach(r => {
+  r.addEventListener('change', () => {
+    document.querySelector('.main').scrollTop = 0;
+  });
+});
+
+init().catch(e => toast(e.message, 'error'));
+</script>
+<dialog id="evidence-dialog"><div class="result-heading"><h3 id="evidence-heading">原文证据</h3><button class="btn icon-btn" id="close-evidence" title="关闭" aria-label="关闭"><i data-lucide="x"></i></button></div><p id="evidence-text"></p><a id="evidence-pdf" target="_blank" rel="noopener">打开 PDF</a><iframe id="evidence-frame" title="论文原文 PDF"></iframe></dialog>
+<script src="/static/vendor/lucide.min.js"></script>
+<script src="/static/vendor/marked.umd.js"></script>
+<script src="/static/vendor/purify.min.js"></script>
+<link rel="stylesheet" href="/static/annotations.css?v=1">
+<script src="/static/reading-markdown.js?v=2"></script>
+<script src="/static/annotations.js?v=1"></script>
+<script src="/static/pdf-preview.js?v=4"></script>
+<script src="/static/notebook.js?v=5"></script>
+<script src="/static/reading.js?v=notes-5"></script>
+</body>
+</html>
