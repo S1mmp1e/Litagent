@@ -10,9 +10,10 @@ LitAgent 是面向个人研究工作流的论文阅读 Agent：导入 PDF 或 ar
 
 项目使用 **DeepSeek API、全文混合 RAG、版本化 Skills、个人笔记模板和可恢复任务流程**。
 
-![LitAgent 阅读工作台](docs/images/reading-workspace.png)
+<img width="928" height="458" alt="image" src="https://github.com/user-attachments/assets/f460385a-7e1d-48fa-ac8a-5acbd8b97907" />
 
-> 截图由独立演示数据库生成，展示真实界面与交互；
+
+> 截图展示真实界面与交互；在生成笔记的同时，确保原文链接，方便读者直接从笔记对应原文内容
 
 ## 能做什么
 
