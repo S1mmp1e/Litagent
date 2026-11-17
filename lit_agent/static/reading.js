@@ -415,6 +415,8 @@
       throw new Error(`“${spec.name}”需要选择 ${spec.min_papers === spec.max_papers ? spec.min_papers : `${spec.min_papers}-${spec.max_papers}`} 篇论文。`);
     }
     if (new Set(ids).size !== ids.length) throw new Error('请为论文 A 和论文 B 选择不同论文。');
+    const selectedEpoch = contextEpoch;
+    if (!await window.LitModelSettings.ensureConfigured() || selectedEpoch !== contextEpoch) return;
     resetReadingOutput();
     const token = watchToken, epoch = contextEpoch;
     const task = await request('/api/chat/runs', {method:'POST', body:JSON.stringify({
@@ -431,6 +433,10 @@
     const text = el('chat-input').value.trim(); if(!text) return;
     el('send-btn').disabled = true; el('chat-run-status').textContent = '等待执行';
     try {
+      if (!await window.LitModelSettings.ensureConfigured()) {
+        el('chat-run-status').textContent = '请先保存模型配置。';
+        return;
+      }
       const task = await request('/api/chat/runs', {method:'POST', body:JSON.stringify({message:text, action:'chat', session_id:_currentSessionId})});
       _currentSessionId = task.session_id; el('chat-input').value = '';
       localStorage.setItem('litagent-chat-task', task.id);
@@ -456,6 +462,7 @@
   el('reading-template').addEventListener('change', () => { readingSession=null; contextEpoch+=1; });
   el('use-personal').addEventListener('change', () => { readingSession=null; contextEpoch+=1; });
   document.addEventListener('lit-personal-change', () => { readingSession=null; contextEpoch+=1; });
+  document.addEventListener('lit-model-config-change', () => { readingSession=null; contextEpoch+=1; });
   bind('open-saved-note', () => window.LitNotebook.open(noteTask));
   el('action-control').addEventListener('click', e => {
     if(!e.target.dataset.action) return; action=e.target.dataset.action;
@@ -533,9 +540,7 @@
   async function initReading() {
     window.LitPDF.show('reading-pdf-preview', null);
     icons();
-    const health=await request('/api/health');
-    el('model-status').textContent=`${health.model} · ${health.api_configured ? 'API 已配置' : 'API 未配置'}`;
-    el('model-status').dataset.configured = String(health.api_configured);
+    await window.LitModelSettings.ready;
     await Promise.all([loadSkills(),loadPapers(),loadProfile(),loadPresets(),loadTasks(),window.LitNotebook?.ready]);
     const last=localStorage.getItem('litagent-last-task'); if(last) await watch(last).catch(() => localStorage.removeItem('litagent-last-task'));
     const chat=localStorage.getItem('litagent-chat-task'); if(chat) waitChat(chat).catch(report);

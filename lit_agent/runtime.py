@@ -3,14 +3,14 @@
 import copy
 import hashlib
 import json
-import os
 import re
 import time
+from urllib.parse import urlsplit
 
 from openai import OpenAI, AuthenticationError, RateLimitError, APIConnectionError
 from pydantic import ConfigDict, Field, create_model
 
-from . import retrieval, skills, store
+from . import model_config, retrieval, skills, store
 from .settings import MAX_ROUNDS, MAX_TASK_SECONDS
 
 
@@ -41,7 +41,7 @@ def safe_error(error):
     if isinstance(error, (ValueError, TimeoutError, Cancelled)):
         return re.sub(r"sk-[A-Za-z0-9_-]{12,}", "[REDACTED]", str(error))[:400]
     if isinstance(error, AuthenticationError):
-        return "模型服务认证失败（401）。请核对服务商、密钥和环境变量，并重启服务。"
+        return "模型服务认证失败（401）。请在“模型设置”中核对服务地址和 API Key。"
     if isinstance(error, RateLimitError):
         return "模型服务限流或配额不足。请检查账户状态，稍后重试。"
     if isinstance(error, APIConnectionError):
@@ -51,12 +51,19 @@ def safe_error(error):
 
 class Model:
     def __init__(self, guard):
-        key = os.getenv("DEEPSEEK_API_KEY") or os.getenv("LIT_API_KEY")
+        config = model_config.current_config()
+        key = config.api_key.get_secret_value()
         if not key:
-            raise ValueError("未配置服务端 DEEPSEEK_API_KEY，请在本机 .env 中设置后重启。")
-        self.client = OpenAI(api_key=key, base_url=os.getenv("LIT_BASE_URL", "https://api.deepseek.com"),
+            raise ValueError("尚未配置 API Key，请打开“模型设置”填写，或配置服务端 DEEPSEEK_API_KEY。")
+        self.client = OpenAI(api_key=key, base_url=config.base_url,
                              max_retries=0)
-        self.model = os.getenv("LIT_MODEL", "deepseek-chat")
+        self.model = config.model
+        # Current official DeepSeek models default to thinking; retain our bounded non-thinking workflow.
+        self.completion_options = (
+            {"extra_body": {"thinking": {"type": "disabled"}}}
+            if urlsplit(config.base_url).hostname == "api.deepseek.com"
+            and (self.model == "deepseek-flash" or self.model.startswith("deepseek-v4-")) else {}
+        )
         self.guard = guard
         self.usage = {"prompt_tokens": 0, "completion_tokens": 0, "model_calls": 0}
         self.last_completion = None
@@ -72,6 +79,7 @@ class Model:
             raise ValueError("模型输出 Token 预算必须为正整数。")
         kwargs = {"model": self.model, "messages": messages, "max_tokens": max_tokens, "temperature": 0.2,
                   "timeout": min(45, self.guard.remaining())}
+        kwargs.update(self.completion_options)
         if tools:
             kwargs.update(tools=tools, tool_choice="auto", parallel_tool_calls=False)
         # No implicit SDK retry: a tool transaction is never replayed by this client.

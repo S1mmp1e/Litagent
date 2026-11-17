@@ -3,7 +3,8 @@ from scripts.check_release import link_findings, private_path, secret_findings
 
 def test_private_release_paths():
     for name in (".env", ".env.local", "data/pdf/source.pdf", "backups/library.db",
-                 ".notebook-test-demo/test.db", "docs/对话记录.md", "private.key"):
+                 ".notebook-test-demo/test.db", "docs/对话记录.md", "private.key", "model-config.json",
+                 "demo/.model-config-test.tmp"):
         assert private_path(name)
     assert not private_path(".env.example")
     assert not private_path("lit_agent/database.py")

@@ -3,7 +3,7 @@ const {spawn,spawnSync} = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
 const {chromium} = require('playwright');
-const {pythonPath, browserOptions, stopServer} = require('./browser-support.cjs');
+const {pythonPath, browserOptions, stopServer, mockModelSettings} = require('./browser-support.cjs');
 
 const root = path.resolve(__dirname,'..');
 const scratch = fs.mkdtempSync(path.join(root,'.notebook-test-annotations-'));
@@ -31,6 +31,7 @@ async function main(){
     assert(ready,logs||'Test server did not start');
     browser=await chromium.launch(browserOptions());
     const page=await browser.newPage({viewport:{width:1440,height:1000}});
+    await mockModelSettings(page);
     const errors=[];page.on('pageerror',error=>errors.push(error.stack||error.message));
     await page.goto(base,{waitUntil:'networkidle'});
     await page.locator('label[for=tab5]').click();

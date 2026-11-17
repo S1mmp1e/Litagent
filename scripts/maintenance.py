@@ -13,16 +13,17 @@ from contextlib import closing
 from pathlib import Path
 
 from lit_agent.settings import DATA, DB_FILE, MODEL_NAME, ROOT
+from lit_agent.model_config import public_config
 
 
 def doctor(load_model=False):
     packages = {name: importlib.util.find_spec(name) is not None for name in (
         "fastapi", "uvicorn", "sqlalchemy", "pypdf", "qdrant_client",
         "sentence_transformers", "torch")}
-    key = os.getenv("DEEPSEEK_API_KEY") or os.getenv("LIT_API_KEY") or ""
+    config = public_config()
     report = {"database": str(DB_FILE), "data": str(DATA), "packages": packages,
-              "key_present": bool(key.strip()), "key_validated": False,
-              "embedding_model": MODEL_NAME, "text_model": os.getenv("LIT_MODEL", "deepseek-chat"),
+              "key_present": config["api_configured"], "key_validated": False,
+              "embedding_model": MODEL_NAME, "text_model": config["model"],
               "embedding": "not_loaded", "counts": {}}
     if DB_FILE.is_file():
         with closing(sqlite3.connect(DB_FILE.as_uri() + "?mode=ro", uri=True)) as db:

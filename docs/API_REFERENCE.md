@@ -2,13 +2,14 @@
 
 默认地址为 `http://127.0.0.1:7860`。运行服务后访问 `/docs` 查看由 Pydantic 生成的字段定义，`/openapi.json` 是接口结构的权威来源。
 
-本服务没有用户认证，仅用于可信本机。示例中的 ID 必须替换为本机实际返回的值；请求不携带模型密钥。
+本服务没有用户认证，仅用于可信本机。示例中的 ID 必须替换为本机实际返回的值；阅读请求不携带模型密钥。密钥只在显式保存或测试模型配置时提交。
 
 ## 1. 接口地图
 
 | 分组 | 主要接口 |
 |---|---|
 | 健康 | `GET /api/health` |
+| 模型配置 | `GET/PUT/DELETE /api/settings/model`，`POST /api/settings/model/test` |
 | 文献库 | `GET /api/library/rows`，`GET /api/library/detail/{paper_id}`，`POST /api/library/add`，`DELETE /api/library/{paper_id}` |
 | 搜索与分类 | `GET /api/search`，`GET/POST /api/categories`，`PUT/DELETE /api/categories/{cat_id}` |
 | PDF | `POST /api/papers/upload`，`GET/POST /api/papers/{paper_id}/preview`，`GET /api/documents/{document_id}/pdf` |
@@ -22,6 +23,17 @@
 | 批注 | `GET/POST /api/annotations`，`GET/PUT/DELETE /api/annotations/{annotation_id}` |
 | 个人材料 | `PUT /api/personal/notes/{task_id}`，`GET /api/personal/evidence/{task_id}/{chunk_id}` |
 | 评测与审核 | `GET /api/eval/manifest`，`GET /api/tasks/{task_id}/review-input`，`GET /api/exports/sft` |
+
+### 模型配置接口
+
+仅通过本机地址访问，所有模型配置请求均需请求头 `X-LitAgent-Settings: 1`。响应不包含密钥，且设置 `Cache-Control: no-store`。
+
+- `GET /api/settings/model` 返回 `base_url`、`model`、`api_configured`、`source`、`can_reset`、`error`；`source` 为 `local`、`environment` 或 `default`。
+- `PUT /api/settings/model` 接收 `base_url`、`model`、`api_key`。同地址下密钥留空保留现有值；地址变更必须提供新密钥。保存后仅新建模型客户端使用新配置。
+- `POST /api/settings/model/test` 接收相同字段，但不保存。仅查询 `/models`，返回 `ok`、`model_available`、`models`、`message`。认证失败返回 `422`、网络异常返回 `502`、超时返回 `504`，不透传服务商错误正文。
+- `DELETE /api/settings/model` 移除界面保存的配置，恢复环境配置；不会修改 `.env`。
+
+配置请求的校验错误不回显输入值；接口字段也列在 `/docs` 中。连接成功不代表余额充足、工具调用和流式生成均兼容。
 
 ## 2. 创建阅读任务
 

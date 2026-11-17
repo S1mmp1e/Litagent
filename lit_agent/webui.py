@@ -67,7 +67,10 @@ async def local_origin_guard(request, call_next):
     if origin and request.method not in ("GET", "HEAD", "OPTIONS"):
         if urlsplit(origin).netloc != request.headers.get("host"):
             return JSONResponse(status_code=403, content={"detail": "拒绝跨站写入请求。"})
-    return await call_next(request)
+    response = await call_next(request)
+    if request.url.path.startswith("/api/settings/model"):
+        response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 @app.exception_handler(Exception)

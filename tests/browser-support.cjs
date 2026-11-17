@@ -31,4 +31,12 @@ async function stopServer(server) {
   });
 }
 
-module.exports = {pythonPath, browserOptions, stopServer};
+async function mockModelSettings(page) {
+  // These reading suites mock generation; credential setup is exercised by model-settings-browser.cjs.
+  await page.route('**/api/settings/model', route => route.fulfill({json:{
+    base_url:'https://api.deepseek.com',model:'synthetic-test-model',
+    api_configured:true,source:'environment',can_reset:false,error:null,
+  }}));
+}
+
+module.exports = {pythonPath, browserOptions, stopServer, mockModelSettings};

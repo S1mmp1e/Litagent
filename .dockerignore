@@ -6,6 +6,8 @@
 node_modules
 backups
 data
+**/model-config.json
+**/.model-config-*.tmp
 artifacts
 .pytest_cache
 .pytest-tmp

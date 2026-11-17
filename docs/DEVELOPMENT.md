@@ -88,9 +88,10 @@ npm run test:ui
 npm run test:notebook-ui
 npm run test:reading-selection
 npm run test:annotations-ui
+npm run test:settings-ui
 ```
 
-后端测试在临时目录创建数据库；浏览器测试使用独立数据目录与端口 17867、17869、17870、17871。不要让开发服务使用这些测试端口。测试结束会停止自己启动的服务并校验临时目录后清理。
+后端测试在临时目录创建数据库；浏览器测试使用独立数据目录与端口 17867、17869、17870、17871、17872。不要让开发服务使用这些测试端口。模型配置检查另启一个随机端口的本机模拟 API，不使用真实凭据、不调用线上模型。测试结束会停止自己启动的服务并校验临时目录后清理。
 
 Windows 默认优先使用已安装的 Edge，其他平台使用 Playwright Chromium。CI 不注入模型密钥，不调用线上模型。
 

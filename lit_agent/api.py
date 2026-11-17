@@ -1,6 +1,5 @@
 import asyncio
 import json
-import os
 import re
 import time
 import uuid
@@ -11,12 +10,13 @@ from fastapi.responses import FileResponse, Response, StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
 from pypdf.errors import PdfReadError
 
-from . import documents, note_templates, notebook, personal, retrieval, skills, store
+from . import documents, model_config, note_templates, notebook, personal, retrieval, skills, store
 from .chat_history import create_session
 from .runtime import Guard, check_citations
 from .settings import DATA, MAX_PDF_BYTES, MODEL_NAME, library_identity
 
 router = APIRouter()
+router.include_router(model_config.router)
 router.include_router(note_templates.router)
 router.include_router(notebook.router)
 router.include_router(personal.router)
@@ -112,10 +112,11 @@ def submit(req):
 
 @router.get("/api/health")
 def health():
+    config = model_config.public_config()
     return {"ok": bool(store.one("SELECT 1 AS ok")), "application": "litagent", "version": "4.0.0",
             "library_id": library_identity(),
-            "model": os.getenv("LIT_MODEL", "deepseek-chat"),
-            "api_configured": bool(os.getenv("DEEPSEEK_API_KEY") or os.getenv("LIT_API_KEY")),
+            "model": config["model"],
+            "api_configured": config["api_configured"],
             "embedding_model": MODEL_NAME, "single_user": True}
 
 

@@ -11,6 +11,8 @@ __pycache__/
 *.db-shm
 *.db-wal
 data/
+model-config.json
+.model-config-*.tmp
 backups/
 *.log
 .claude/

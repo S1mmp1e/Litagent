@@ -86,14 +86,14 @@ py -3.12 -m venv .venv
 Copy-Item .env.example .env
 ```
 
-在本机 `.env` 中设置 `DEEPSEEK_API_KEY`，然后执行：
+密钥可以在启动后通过页面配置；也可以提前在本机 `.env` 中设置 `DEEPSEEK_API_KEY`。然后执行：
 
 ```powershell
 .\.venv\Scripts\python.exe -m scripts.setup_embeddings
 .\.venv\Scripts\python.exe -m scripts.launch
 ```
 
-打开 `http://127.0.0.1:7860`。以后也可双击 `start_webui.bat`。启动器会检查依赖、端口及数据库身份，**不会自动安装依赖或下载模型**。
+打开 `http://127.0.0.1:7860`，点击右上角“模型设置”，填写自己的 API Key、API 地址和模型名称，先“测试连接”再“保存配置”。未配置时页面会显示提示。以后也可双击 `start_webui.bat`。启动器会检查依赖、端口及数据库身份，**不会自动安装依赖或下载模型**。
 
 ### Linux / macOS
 
@@ -103,18 +103,26 @@ cd Litagent
 python3.12 -m venv .venv
 .venv/bin/python -m pip install -r requirements-rag.txt
 cp .env.example .env
-# 在 .env 中填写自己的 DEEPSEEK_API_KEY
+# 密钥可在启动后的“模型设置”中填写，也可使用 .env
 .venv/bin/python -m scripts.setup_embeddings
 .venv/bin/python -m scripts.launch --no-browser
 ```
 
 Windows 本机流程已有实际验证；跨平台测试由 CI 检查，Docker 配置与平台说明见 [部署指南](docs/DEPLOYMENT.md)。
 
+### 配置模型 API
+
+- 右上角“模型设置”可填写 API 地址、模型名称和 API Key，窗口提供 DeepSeek 密钥管理入口。
+- “测试连接”只请求服务商的 `/models`，不发送论文、不调用生成接口；成功不代表余额充足或所有阅读功能均兼容。返回的模型名称可在输入框中选择。
+- “保存配置”后新任务立即生效，正在运行的任务继续使用原配置。密钥留空会保留现有密钥；更换 API 地址时须重新填写该服务的密钥。
+- 配置优先级为：**界面保存的本机配置 > 进程环境变量 > `.env` > 默认值**。可点击“恢复环境配置”移除界面配置。
+- 界面配置以明文保存在 `LIT_DATA_DIR/model-config.json`（默认 `data/model-config.json`）；不返回密钥，不写入浏览器存储，并排除在 Git 发布范围外。请保护本机数据目录。设置入口仅通过本机 `localhost` / `127.0.0.1` / `::1` 地址使用。
+
 > 只安装 `requirements.txt` 可以运行文献管理和界面；全文索引与语义检索需要 `requirements-rag.txt` 及本地模型。首次安装会下载 PyTorch 等较大依赖，运行时不会静默下载模型，也不会用模拟向量代替真实向量。
 
 ## 第一次完整使用
 
-1. 在“论文阅读”导入文字型 PDF，等待“处理全文”完成。
+1. 在“模型设置”保存自己的 API 配置，然后在“论文阅读”导入文字型 PDF，等待“处理全文”完成。
 2. 保存阅读档案，选择“精读”等阅读模式和笔记模板。
 3. 开始全文阅读，检查结果中的引用并对照 PDF。
 4. 在“我的笔记”修改、保存自己的理解；需要复用时勾选“将此版本用于后续问答”。
@@ -132,9 +140,9 @@ npx playwright install chromium
 npm run test:annotations-ui
 ```
 
-其他浏览器检查：`npm run test:ui`、`npm run test:notebook-ui`、`npm run test:reading-selection`。测试创建独立数据库，不读取你的密钥，不调用线上模型。
+其他浏览器检查：`npm run test:ui`、`npm run test:notebook-ui`、`npm run test:reading-selection`、`npm run test:settings-ui`。配置检查使用本机模拟 API 验证保存、连接测试、失败提示及手机布局。测试创建独立数据库，不使用你的密钥，不调用线上模型。
 
-本次发布在 Windows 重新运行后端测试，**132 项通过、1 项跳过**，四组浏览器回归通过；另有桌面、手机、PDF 非空检查和跨论文状态隔离。这些结果不能当作真实回答正确率或性能提升。详细记录见 [验证说明](docs/VALIDATION.md)。
+本次发布在 Windows 重新运行后端测试，**162 项通过、1 项跳过**，五组浏览器回归通过；另有桌面、手机、PDF 非空检查和跨论文状态隔离。这些结果不能当作真实回答正确率或性能提升。详细记录见 [验证说明](docs/VALIDATION.md)。
 
 真实质量评测工具支持人工证据标注、关键词/向量/混合检索比较，以及同材料、同模型、同预算下的提示词对比；仓库没有预填虚构分数。
 

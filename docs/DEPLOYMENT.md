@@ -8,14 +8,16 @@
 
 ## 2. 配置
 
-将 `.env.example` 复制为本机 `.env`，填入密钥。环境变量优先于 `.env`。
+将 `.env.example` 复制为本机 `.env`。模型密钥可在启动后的“模型设置”填写，也可使用环境变量或 `.env`。
+
+模型配置优先级：**界面保存的配置 > 进程环境变量 > `.env` > 默认值**。界面配置位于 `LIT_DATA_DIR/model-config.json`，原子写入，不覆盖 `.env`，对后续任务即时生效；“恢复环境配置”移除该文件。该文件含明文密钥，应限制本机访问，不纳入公开材料。其他配置仍由进程环境变量和 `.env` 决定。
 
 | 变量 | 默认值 / 含义 |
 |---|---|
-| `DEEPSEEK_API_KEY` | 必填用于真实模型调用；服务端读取 |
+| `DEEPSEEK_API_KEY` | 模型密钥；也可通过界面配置，服务端读取 |
 | `LIT_API_KEY` | 兼容接口密钥后备项 |
 | `LIT_BASE_URL` | `https://api.deepseek.com` |
-| `LIT_MODEL` | `deepseek-chat` |
+| `LIT_MODEL` | `deepseek-flash`（已有配置保持其原值） |
 | `LIT_HOST` | `127.0.0.1` |
 | `LIT_PORT` | `7860` |
 | `LIT_DB_PATH` | 项目根目录 `lit_agent.db` |
@@ -25,7 +27,11 @@
 | `LIT_READING_MAX_TOKENS` | 最终输出 8192 token |
 | `LIT_ALLOW_MODEL_DOWNLOAD` | `0`，运行时不自动下载 E5 |
 
-更改配置后重启后端。模型服务是否接受某个输出预算取决于配置的服务商；不能只增加数值就假定服务端支持。
+修改 `.env` 或进程环境变量后重启后端；通过界面保存模型配置不需要重启。模型服务是否接受某个输出预算取决于配置的服务商；不能只增加数值就假定服务端支持。
+
+模型设置接口需要本机 Host（`localhost`、`127.0.0.1` 或 `::1`）与 `X-LitAgent-Settings: 1` 请求头；跨来源写请求会被拒绝。此约束用于本机浏览器访问，不是多用户认证。Docker 使用映射后的 `127.0.0.1:7860` 入口。连接测试仅查询 `/models`、不跟随重定向；HTTPS 用于远程服务，HTTP 仅允许回环地址。
+
+新安装默认模型为 `deepseek-flash`；可用名称以服务商返回的模型列表为准。针对官方 DeepSeek 地址的 `deepseek-flash` / `deepseek-v4-*`，阅读流程显式使用非思考模式，使分段提取与输出预算保持原有语义；其他兼容服务不附加该专有参数。已有 `.env` 不会自动改写。配置参考：[官方模型列表](https://api-docs.deepseek.com/api/list-models/)、[思考模式](https://api-docs.deepseek.com/guides/thinking_mode/)。
 
 ## 3. 模型准备
 
@@ -68,7 +74,7 @@ $env:LIT_DATA_DIR = "$PWD\demo-local\data"
 
 ```bash
 cp .env.example .env
-# 在 .env 填写密钥
+# 密钥可在启动后的“模型设置”中填写
 docker compose build
 docker compose --profile setup run --rm setup-embeddings
 docker compose up -d litagent

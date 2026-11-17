@@ -9,6 +9,7 @@ from urllib.parse import unquote, urlsplit
 ROOT = Path(__file__).resolve().parent.parent
 PRIVATE_PARTS = {
     ".env", ".venv", ".agents", ".codex", ".claude", ".vscode", "node_modules",
+    "model-config.json",
     "data", "backups", "artifacts", "__pycache__", ".pytest_cache", ".pytest-tmp",
 }
 SECRET_RULES = {
@@ -39,6 +40,7 @@ def private_path(name):
         or path.suffix.lower() in {".db", ".log", ".pem", ".key", ".p12", ".pfx", ".docx"}
         or path.name.endswith((".db-wal", ".db-shm"))
         or path.name.startswith("对话")
+        or path.name.startswith(".model-config-")
         or name == "convert_jsonl_to_docx.py"
     )
 

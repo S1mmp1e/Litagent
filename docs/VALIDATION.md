@@ -8,9 +8,10 @@
 
 | 检查 | 当前结果 | 解释 |
 |---|---|---|
-| 完整后端回归 | 132 passed, 1 skipped | 51.31 秒；包含 3 项新发布检查；跳过合成性能测试 |
-| 发布清单检查 | 通过 | 323 个候选文件；常见密钥模式、私人路径、文档目标和随附许可证 |
-| 四组浏览器检查 | 全部通过 | 阅读界面、笔记模板、论文切换、批注；无页面脚本错误 |
+| 完整后端回归 | 162 passed, 1 skipped | 47.20 秒；包含 30 项模型配置检查；跳过合成性能测试 |
+| 发布清单检查 | 通过 | 329 个候选文件；常见密钥模式、私人路径、文档目标和项目及随附许可证 |
+| 五组浏览器检查 | 全部通过 | 阅读界面、笔记模板、论文切换、批注、模型配置；无页面脚本错误 |
+| 模型设置 | 本机模拟 API 验证通过 | 保存、刷新持久化、密钥不回显、恢复配置、认证失败、未配置时阻止提交；1440 / 390 / 320 px |
 | 公共演示截图 | 八张已生成并检查 | PDF 可见深色像素 11,385；手机宽度 390，无横向溢出 |
 | Docker Compose 配置 | 通过 | `docker compose config --quiet` 返回 0 |
 | Docker 构建与运行 | 未执行 | Docker Desktop Linux 引擎未运行 |
@@ -22,6 +23,8 @@
 首次上传的 Linux 后端检查通过，浏览器检查在安装阶段遇到 `ubuntu-latest` 切换至 Ubuntu 26.04 后与 Playwright 1.56.1 不兼容的问题。CI 已固定为 Ubuntu 24.04；未执行的浏览器步骤不计为通过。
 
 Linux 浏览器验收进一步发现 PDF 缩放重绘期间仍保留 `ready` 状态。现已在重绘开始时标记 `rendering` / `aria-busy`，仅在画布和文字层完成后恢复 `ready`；原有非空像素检查继续作为回归门槛。
+
+模型配置增量的 Windows 检查中，批注缩放在并行运行时曾出现一次等待超时，单独复测通过；尚未声称消除了所有渲染时序波动。笔记提交检查已改为等待提交响应完成，再检查模板 ID 和版本，原断言保留。配置测试使用本机模拟 `/models` 服务，不使用真实密钥，也不将连通测试当作线上生成能力验证。
 
 ## 可运行的软件检查
 
@@ -35,6 +38,7 @@ npm run test:ui
 npm run test:notebook-ui
 npm run test:reading-selection
 npm run test:annotations-ui
+npm run test:settings-ui
 npm run showcase
 ```
 
@@ -51,6 +55,8 @@ npm run showcase
 | `test_runtime.py` / `test_api.py` | 参数、超时、上下文、接口与事件 |
 | `test_maintenance_eval.py` | 备份、身份、标注与配对条件 |
 | `test_release.py` | 发布路径、敏感值不回显、链接 |
+| `test_model_config.py` | 配置优先级、跨进程持久化、原子保存、密钥不回显、地址校验、连接异常与官方模型参数 |
+| `model-settings-browser.cjs` | 首次配置、恢复、失败提示、提交前检查、浏览器不存密钥及窄屏布局 |
 | `annotations-browser.cjs` | 缩放、刷新、跨论文隔离、引用与手机布局 |
 
 ## 真实使用验收

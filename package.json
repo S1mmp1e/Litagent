@@ -8,7 +8,8 @@
     "test:ui": "node tests/browser.cjs",
     "test:notebook-ui": "node tests/notebook-browser.cjs",
     "test:reading-selection": "node tests/reading-selection.cjs",
-    "test:annotations-ui": "node tests/annotations-browser.cjs"
+    "test:annotations-ui": "node tests/annotations-browser.cjs",
+    "test:settings-ui": "node tests/model-settings-browser.cjs"
   },
   "devDependencies": {
     "dompurify": "3.4.17",

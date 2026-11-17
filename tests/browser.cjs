@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { chromium } = require('playwright');
-const {pythonPath, browserOptions, stopServer} = require('./browser-support.cjs');
+const {pythonPath, browserOptions, stopServer, mockModelSettings} = require('./browser-support.cjs');
 
 const root = path.resolve(__dirname, '..');
 const scratch = fs.mkdtempSync(path.join(root, '.browser-test-'));
@@ -32,6 +32,7 @@ async function main() {
     if (!ready) throw new Error('Test server did not become ready.');
     browser = await chromium.launch(browserOptions());
     const page = await browser.newPage({viewport:{width:1440,height:1000}, deviceScaleFactor:1});
+    await mockModelSettings(page);
     const pageErrors = [];
     page.on('pageerror', error => pageErrors.push(error.message));
     await page.route('**/api/library/rows', route => route.fulfill({json:{

@@ -3,7 +3,7 @@ const {spawn,spawnSync} = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
 const {chromium} = require('playwright');
-const {pythonPath, browserOptions, stopServer} = require('./browser-support.cjs');
+const {pythonPath, browserOptions, stopServer, mockModelSettings} = require('./browser-support.cjs');
 
 const root = path.resolve(__dirname,'..');
 const scratch = fs.mkdtempSync(path.join(root,'.notebook-test-'));
@@ -30,6 +30,7 @@ async function main() {
     }
     browser = await chromium.launch(browserOptions());
     const page = await browser.newPage({viewport:{width:1600,height:1000}});
+    await mockModelSettings(page);
     const errors=[];
     page.on('pageerror',error=>errors.push(error.message));
     await page.goto(base,{waitUntil:'networkidle'});
@@ -249,7 +250,10 @@ async function main() {
       return route.fulfill({json:{id:seeded.notes[0]}});
     });
     await page.getByLabel('选择阅读论文').selectOption(String(seeded.papers[0]));
-    await page.getByRole('button',{name:'开始阅读',exact:true}).click();
+    await Promise.all([
+      page.waitForResponse(response => response.url().endsWith('/api/chat/runs')),
+      page.getByRole('button',{name:'开始阅读',exact:true}).click(),
+    ]);
     assert.equal(submitted.template_id,chosen);
     assert.equal(submitted.template_version,2);
     await page.getByText('我的笔记',{exact:true}).click();

@@ -1,5 +1,3 @@
-import os
-
 import click
 from rich.console import Console
 from rich.table import Table
@@ -105,8 +103,9 @@ def export(paper_ids):
 def chat(message):
     """Interactive AI chat using server-side DeepSeek configuration."""
     from .agent_openai import run_agent_openai
+    from .model_config import current_config
 
-    api_key = os.environ.get("DEEPSEEK_API_KEY") or os.environ.get("LIT_API_KEY")
+    api_key = current_config().api_key.get_secret_value()
     if not api_key:
         console.print("[red]Error: DEEPSEEK_API_KEY is not configured.[/red]")
         return
