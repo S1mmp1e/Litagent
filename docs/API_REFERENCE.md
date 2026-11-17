@@ -30,10 +30,22 @@
 
 - `GET /api/settings/model` 返回 `base_url`、`model`、`api_configured`、`source`、`can_reset`、`error`；`source` 为 `local`、`environment` 或 `default`。
 - `PUT /api/settings/model` 接收 `base_url`、`model`、`api_key`。同地址下密钥留空保留现有值；地址变更必须提供新密钥。保存后仅新建模型客户端使用新配置。
-- `POST /api/settings/model/test` 接收相同字段，但不保存。仅查询 `/models`，返回 `ok`、`model_available`、`models`、`message`。认证失败返回 `422`、网络异常返回 `502`、超时返回 `504`，不透传服务商错误正文。
+- `POST /api/settings/model/test` 接收相同字段，但不保存。仅查询 `/models`，返回 `ok`、`model_available`、`models`、`message`。认证失败返回 `422`、服务商限流返回 `429`、网络异常返回 `502`、超时返回 `504`，不透传服务商错误正文。
 - `DELETE /api/settings/model` 移除界面保存的配置，恢复环境配置；不会修改 `.env`。
 
 配置请求的校验错误不回显输入值；接口字段也列在 `/docs` 中。连接成功不代表余额充足、工具调用和流式生成均兼容。
+
+读取当前配置时无需提供密钥：
+
+```http
+GET /api/settings/model
+Host: 127.0.0.1:7860
+X-LitAgent-Settings: 1
+```
+
+`PUT` 与 `POST /test` 的正文为 JSON，需使用 `Content-Type: application/json`。`api_key` 可以省略或留空，但只有在地址未变且已有密钥时才能复用；未配置时必须填写。非回环 Host 或缺少专用请求头返回 `403`。远程 API 地址必须为 HTTPS，本机回环服务允许 HTTP。
+
+测试返回 HTTP `200` 仍需检查 `ok` 与 `model_available`：模型列表可读但未包含所选模型时，两者为 `false`。测试不会自动保存配置，客户端应在用户保存时单独发送 `PUT`。
 
 ## 2. 创建阅读任务
 

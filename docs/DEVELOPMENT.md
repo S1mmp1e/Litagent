@@ -32,6 +32,7 @@ lit_agent/
   api.py / webui.py          HTTP 入口
   store.py / database.py     事务、迁移及模型
   jobs.py / runtime.py       任务与模型执行
+  model_config.py            模型配置、持久化与连接测试
   documents.py               PDF 管线
   retrieval.py               原文混合检索
   reading_workflow.py        阅读编排
@@ -79,6 +80,14 @@ SQLAlchemy 管理文献结构，新增阅读业务使用 `store.connect()` 的�
 延续原生 JS/CSS 结构。输出经过 DOMPurify 后才能插入页面。异步响应、SSE 和 PDF 加载须校验当前论文/任务身份，避免旧响应覆盖新选择。
 
 固定宽度的图标按钮应有 `aria-label` 或 `title`，窄屏不得依赖横向溢出才能操作。
+
+### 修改模型配置
+
+配置入口为 `model_config.py`，设置界面为 `static/model-settings.js` 和 `static/model-settings.css`。Web 工作流统一通过 `runtime.Model` 读取配置，不应在新路由中再创建独立的密钥来源或持久化逻辑。
+
+配置查询只返回 `public_config()` 的公开字段；禁止回传密钥、将密钥放入任务记录或浏览器存储。校验错误也不能回显包含密钥的原始请求。更换地址时必须重新输入密钥；连接测试只查询模型列表且不跟随重定向。
+
+修改此路径后运行 `tests/test_model_config.py` 和 `npm run test:settings-ui`；测试使用隔离目录和本机模拟服务。检查保存与重启读取、环境回退、失效配置、失败提示、密钥不回显和窄屏布局，并运行发布清单检查，确认配置文件及临时文件仍被排除。
 
 ## 4. 自动化检查
 

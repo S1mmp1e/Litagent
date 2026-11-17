@@ -18,6 +18,7 @@ LitAgent 是面向个人研究工作流的论文阅读 Agent：导入 PDF 或 ar
 
 | 工作环节 | 当前实现 |
 |---|---|
+| 配置模型 | 页面填写 API 地址、模型与密钥，测试连接、保存或恢复环境配置 |
 | 收集论文 | arXiv 搜索与导入、本地 PDF 上传、分类夹、标签、BibTeX 导出 |
 | 阅读全文 | 逐页解析、分块取证、汇总生成；具体问题走混合检索 |
 | 检查依据 | 原文片段与 PDF 页码链接、引用 ID 校验、有范围的自动依据检查 |
@@ -150,11 +151,11 @@ npm run test:annotations-ui
 
 | 文档 | 内容 |
 |---|---|
-| [用户手册](docs/USER_GUIDE.md) | 安装后的完整使用流程与常见问题 |
-| [技术设计](docs/TECHNICAL_DESIGN.md) | 架构、RAG、Skills、个人材料、数据模型与一致性 |
+| [用户手册](docs/USER_GUIDE.md) | 首次 API 配置、完整使用流程与常见问题 |
+| [技术设计](docs/TECHNICAL_DESIGN.md) | 架构、模型配置、RAG、Skills、个人材料与数据一致性 |
 | [开发指南](docs/DEVELOPMENT.md) | 本地开发、目录职责、扩展方式、测试和提交检查 |
 | [部署指南](docs/DEPLOYMENT.md) | 配置、单进程限制、Docker、模型准备、备份恢复 |
-| [API 参考](docs/API_REFERENCE.md) | 接口分组、请求示例、SSE、冲突与错误语义 |
+| [API 参考](docs/API_REFERENCE.md) | 模型设置、阅读与笔记接口、SSE、冲突与错误语义 |
 | [演示与技术展示](docs/SHOWCASE.md) | 关键画面、可复现演示、技术讲解路线 |
 | [验证与评测](docs/VALIDATION.md) | 软件检查、真实质量评测与证据边界 |
 | [MIT 许可证](LICENSE) | 自有代码及文档的使用、修改与分发许可 |
