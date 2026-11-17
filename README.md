@@ -121,6 +121,7 @@ Windows 本机流程已有实际验证；跨平台测试由 CI 检查，Docker �
 - 界面配置以明文保存在 `LIT_DATA_DIR/model-config.json`（默认 `data/model-config.json`）；不返回密钥，不写入浏览器存储，并排除在 Git 发布范围外。
 
 > 只安装 `requirements.txt` 可以运行文献管理和界面；全文索引与语义检索需要 `requirements-rag.txt` 及本地模型。首次安装会下载 PyTorch 等较大依赖。
+<img width="914" height="442" alt="image" src="https://github.com/user-attachments/assets/7ed88c5f-315a-4ba5-a4a0-f8d37a23117e" />
 
 ## 第一次完整使用
 
