@@ -1,6 +1,7 @@
 {
   "name": "litagent-ui-checks",
   "private": true,
+  "license": "MIT",
   "scripts": {
     "vendor": "node scripts/vendor.cjs",
     "showcase": "node scripts/showcase.cjs",

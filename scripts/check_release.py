@@ -22,6 +22,7 @@ FAKE_SECRETS = {
     ("tests/test_maintenance_eval.py", "sk-" + "test-secret-do-not-print"),
 }
 LICENSES = (
+    "LICENSE",
     "lit_agent/static/vendor/lucide-LICENSE",
     "lit_agent/static/vendor/marked-LICENSE",
     "lit_agent/static/vendor/dompurify-LICENSE",
@@ -107,12 +108,12 @@ def main():
             errors.extend(link_findings(name, text, paths))
     for license_path in LICENSES:
         if license_path not in paths:
-            errors.append(f"{license_path}: missing bundled dependency license")
+            errors.append(f"{license_path}: missing required license file")
     if errors:
         print("\n".join(errors))
         raise SystemExit(f"Release check failed: {len(errors)} finding(s); no secret values printed.")
     print(f"Release check passed: {len(paths)} files, {total_bytes:,} bytes; "
-          "private paths, common secret patterns, Markdown targets and vendor licenses checked.")
+          "private paths, common secret patterns, Markdown targets and project/vendor licenses checked.")
 
 
 if __name__ == "__main__":

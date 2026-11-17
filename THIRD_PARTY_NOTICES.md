@@ -1,6 +1,8 @@
 # Third-Party Notices
 
-Selected browser assets are bundled so the UI does not require a CDN. Their license texts are preserved alongside the distributed files. This notice does not assign a license to LitAgent's own source code.
+LitAgent's own source code and documentation are licensed under the [MIT License](LICENSE).
+
+Selected browser assets are bundled so the UI does not require a CDN. Their license texts are preserved alongside the distributed files. These third-party components remain under their respective licenses; LitAgent's MIT License does not replace their terms.
 
 | Component | Pinned package | Distributed files | License text |
 |---|---|---|---|

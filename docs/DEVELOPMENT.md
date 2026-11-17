@@ -114,13 +114,13 @@ npm run vendor
 ## 7. 发布前检查
 
 ```powershell
-git add README.md docs lit_agent scripts tests .github
+git add LICENSE THIRD_PARTY_NOTICES.md README.md docs lit_agent scripts tests .github package.json package-lock.json
 .\.venv\Scripts\python.exe -m scripts.check_release
 git diff --cached --stat
 ```
 
-发布检查读取 Git 跟踪路径对应的工作区文件，检查敏感模式、禁止路径、大小和 Markdown 本地链接。暂存后不要跳过工作区差异检查；它不能替代对截图与历史文档的人工查看。
+发布检查读取 Git 跟踪路径对应的工作区文件，检查敏感模式、禁止路径、大小、Markdown 本地链接及项目与随附依赖的许可证。暂存后不要跳过工作区差异检查；它不能替代对截图与历史文档的人工查看。
 
 公共仓库不要包含 `.env`、真实数据库、论文 PDF、模型权重、备份、聊天导出或个人开发工具状态。截图使用隔离材料生成，并明确其演示属性。
 
-GitHub Actions 在 push / pull request 执行后端和浏览器检查。项目许可证尚未选定；添加第三方代码时必须保留其许可信息。
+GitHub Actions 在 push / pull request 执行后端和浏览器检查。项目自有代码及文档采用 [MIT 许可证](../LICENSE)；添加或更新第三方代码时必须保留其许可信息，并同步维护 [第三方声明](../THIRD_PARTY_NOTICES.md)。

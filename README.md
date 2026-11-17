@@ -2,6 +2,8 @@
 
 ![Checks](https://github.com/S1mmp1e/Litagent/actions/workflows/checks.yml/badge.svg)
 
+[MIT License](LICENSE)
+
 **以论文原文为依据，结合你的阅读方式与个人笔记。**
 
 LitAgent 是面向个人研究工作流的论文阅读 Agent：导入 PDF 或 arXiv 论文，进行全文精读和证据追问，检查引用位置，将结果沉淀为可编辑笔记，再让经过你选择的笔记与批注参与下一次阅读。
@@ -147,6 +149,7 @@ npm run test:annotations-ui
 | [API 参考](docs/API_REFERENCE.md) | 接口分组、请求示例、SSE、冲突与错误语义 |
 | [演示与技术展示](docs/SHOWCASE.md) | 关键画面、可复现演示、技术讲解路线 |
 | [验证与评测](docs/VALIDATION.md) | 软件检查、真实质量评测与证据边界 |
+| [MIT 许可证](LICENSE) | 自有代码及文档的使用、修改与分发许可 |
 | [第三方声明](THIRD_PARTY_NOTICES.md) | 随仓库分发的前端依赖及许可证位置 |
 
 ## 当前边界
@@ -156,4 +159,9 @@ npm run test:annotations-ui
 - 阅读选择最多两篇论文；不是任意规模的跨库综述系统。
 - 自动引用检查可能出错，不替代人工核对。
 - 已有审核样本导出入口，**没有完成 SFT 训练或部署微调模型**。
-- 项目尚未声明覆盖全部自有代码的开源许可证；随附第三方代码遵循各自许可证。
+
+## 许可证
+
+LitAgent 的自有代码及文档采用 [MIT 许可证](LICENSE)，允许使用、修改、分发和商业使用，分发时须保留版权及许可声明。
+
+随附第三方代码和资源遵循各自许可证，详见 [第三方声明](THIRD_PARTY_NOTICES.md)。根目录的 MIT 许可证不替代这些依赖的许可条款。
